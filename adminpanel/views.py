@@ -23,7 +23,6 @@ from django.contrib.auth.decorators import user_passes_test
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
-from py_crypto_hd_wallet import HdWalletFactory, HdWalletCoins, HdWalletSpecs , HdWalletWordsNum
 import json as jj
 from datetime import datetime ,timedelta
 from django.contrib.auth.hashers import make_password

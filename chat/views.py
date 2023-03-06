@@ -119,9 +119,12 @@ class user(APIView):
             user = ChatSession.objects.get(email = request.data['email'])
             return Response({'uri' : user.uri , 'username' : user.email})
         else :
-            user = ChatSession.objects.get(owner = request.user)
-            return Response({'uri' : user.uri , 'username' : request.user.username})
-        return Response({'uri' : 0})
+            if request.user.is_authenticated:
+                if not ChatSession.objects.filter(owner = request.user):
+                    return Response({'data': 'not found'}, status=status.HTTP_404_NOT_FOUND)
+                user = ChatSession.objects.get(owner = request.user)
+                return Response({'uri' : user.uri , 'username' : request.user.username})
+            return Response({'uri' : 0})
 
 class seen(APIView):
     authentication_classes = [SessionAuthentication, BasicAuthentication, authentication.TokenAuthentication ]

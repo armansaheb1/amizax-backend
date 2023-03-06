@@ -1,0 +1,160 @@
+Metadata-Version: 2.1
+Name: base32-lib
+Version: 1.0.2
+Summary: Small library to generate, encode and decode random base32 strings.
+Home-page: https://github.com/inveniosoftware/base32-lib
+Author: Invenio Software
+Author-email: info@inveniosoftware.org
+License: MIT License
+Keywords: base32 identifiers
+Platform: any
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Requires-Dist: six (>=1.10)
+Provides-Extra: all
+Requires-Dist: Sphinx (>=1.4.2) ; extra == 'all'
+Requires-Dist: check-manifest (>=0.25) ; extra == 'all'
+Requires-Dist: coverage (>=4.0) ; extra == 'all'
+Requires-Dist: isort (>=4.2.2) ; extra == 'all'
+Requires-Dist: pydocstyle (>=1.0) ; extra == 'all'
+Requires-Dist: pytest-cov (>=1.8.0) ; extra == 'all'
+Requires-Dist: pytest-pep8 (>=1.0.6) ; extra == 'all'
+Requires-Dist: pytest-runner (>=2.7.0) ; extra == 'all'
+Requires-Dist: pytest (>=3.6.0) ; extra == 'all'
+Provides-Extra: docs
+Requires-Dist: Sphinx (>=1.4.2) ; extra == 'docs'
+Provides-Extra: tests
+Requires-Dist: check-manifest (>=0.25) ; extra == 'tests'
+Requires-Dist: coverage (>=4.0) ; extra == 'tests'
+Requires-Dist: isort (>=4.2.2) ; extra == 'tests'
+Requires-Dist: pydocstyle (>=1.0) ; extra == 'tests'
+Requires-Dist: pytest-cov (>=1.8.0) ; extra == 'tests'
+Requires-Dist: pytest-pep8 (>=1.0.6) ; extra == 'tests'
+Requires-Dist: pytest-runner (>=2.7.0) ; extra == 'tests'
+Requires-Dist: pytest (>=3.6.0) ; extra == 'tests'
+
+..
+   This file is part of base32-lib
+   Copyright (C) 2019 CERN.
+   Copyright (C) 2019 Northwestern University,
+                      Galter Health Sciences Library & Learning Center.
+
+   base32-lib is free software; you can redistribute it and/or modify it
+   under the terms of the MIT License; see LICENSE file for more details.
+
+
+=================
+base32-lib
+=================
+
+.. image:: https://img.shields.io/travis/inveniosoftware/base32-lib.svg
+        :target: https://travis-ci.org/inveniosoftware/base32-lib
+
+.. image:: https://img.shields.io/coveralls/inveniosoftware/base32-lib.svg
+        :target: https://coveralls.io/r/inveniosoftware/base32-lib
+
+.. image:: https://img.shields.io/github/tag/inveniosoftware/base32-lib.svg
+        :target: https://github.com/inveniosoftware/base32-lib/releases
+
+.. image:: https://img.shields.io/pypi/dm/base32-lib.svg
+        :target: https://pypi.python.org/pypi/base32-lib
+
+.. image:: https://img.shields.io/github/license/inveniosoftware/base32-lib.svg
+        :target: https://github.com/inveniosoftware/base32-lib/blob/master/LICENSE
+
+
+Small library to generate, encode and decode random base32 strings with nice
+properties.
+
+Usage
+=====
+
+.. code-block:: python
+
+    import base32_lib as base32
+
+    # Generate
+    ## Generate a random identifier
+    base32.generate()
+    # -> 'abcd1234'
+
+    # Generate a random identifier with bells and whistle
+    base32.generate(length=10, split_every=5, checksum=True)
+    # -> '3sbk2-5j060'
+
+    # Encode a pre-existing number
+    base32.encode(1234, split_every=3, checksum=True) == "16j-82"
+
+    # Decode an identifier
+    base32.decode("16j-82", checksum=True) == 1234
+
+    base32.decode("16i-82", checksum=True)
+    # raises ValueError
+
+Features
+========
+
+- Generation, encoding and decoding of base32 strings
+- Douglas Crockford base32 encoding
+- URL-safe strings with no problematic special characters
+- Decoding of any-case strings
+- Configurable length strings
+- Randomness through cryptographically secure random number generator
+- Optional ISO-7064 checksum
+- Optional hyphenation
+
+
+Installation
+============
+
+The base32-lib package is on PyPI so all you need is:
+
+.. code-block:: console
+
+    pip install base32-lib
+
+
+Development
+===========
+
+.. code-block:: console
+
+    pipenv run pip install -e .[docs,tests]
+
+Tests
+-----
+
+.. code-block:: console
+
+    pipenv run ./run-tests.sh
+
+
+..
+   This file is part of base32-lib
+   Copyright (C) 2019 CERN.
+   Copyright (C) 2019 Northwestern University, Galter Health Sciences Library & Learning Center.
+
+   base32-lib is free software; you can redistribute it and/or modify it
+   under the terms of the MIT License; see LICENSE file for more details.
+
+Changes
+=======
+
+Version 1.0.2 (2020-05-07)
+
+- Deprecate Python versions lower than 3.6.0. Now supporting 3.6.0 and 3.7.0.
+
+Version 1.0.1 (2019-11-15)
+
+- Enforce appropriate length of the encoded base32 strings.
+
+Version 1.0.0 (2019-11-06)
+
+- First public release.
+
+

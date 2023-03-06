@@ -2,7 +2,6 @@ from requests.sessions import Request
 from django.contrib.auth.hashers import check_password
 from exchange.lib import request_client
 from django.core.exceptions import ValidationError
-from coinmarketcapapi import CoinMarketCapAPI, CoinMarketCapAPIError
 from typing import Text
 from django import http
 from django.http import response
@@ -10,10 +9,6 @@ import datetime
 import requests
 from .lib.request_client import RequestClient
 from .lib.coinex import CoinEx
-from .lib.TRON import Tron
-from .lib.BTC import BTC
-from .lib.ETH import ETH
-from bitmerchant.wallet import Wallet as Wall
 import time
 from django.db.models.fields import EmailField
 from django.http.response import JsonResponse
@@ -33,7 +28,6 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
 import uuid
-from py_crypto_hd_wallet import HdWalletFactory, HdWalletCoins, HdWalletSpecs , HdWalletWordsNum, HdWalletChanges
 import json
 from datetime import datetime ,timedelta
 from django.contrib.auth.hashers import make_password
@@ -44,7 +38,6 @@ import pytz
 from random import randrange
 import requests
 from itertools import chain
-from eth_account import Account
 import secrets
 import logging
 import copy
@@ -63,37 +56,43 @@ import json
 from django.utils import timezone
 
 def sendemail(user , date = '' , title = '' , text = '') :
-    send_mail(
-        'Subject here',
-        f'{title}\n{text}',
-        'info@ramabit.com',
-        [f'{user.email}'],
-        fail_silently=False,
-    )
+    try:
+        send_mail(
+            'Subject here',
+            f'{title}\n{text}',
+            'info@ramabit.com',
+            [f'{user.email}'],
+            fail_silently=False,
+        )
+    except:
+        pass
 
 def sms(user , date = False , text = False , pattern = 'gf9zbtg61v'):
-    sms = Client("qsVtNKDEKtFZ9wgS4o1Vw81Pjt-C3m469UJxCsUqtBA=")
+    try:
+        sms = Client("qsVtNKDEKtFZ9wgS4o1Vw81Pjt-C3m469UJxCsUqtBA=")
 
-    if pattern == 'r4hxan3byx' or pattern == 'tfpvvl8beg'  :
-        pattern_values = {
-    "text": text,
-    }
-    else :
-        pattern_values = {
-    "name": "کاربر",
-    }
+        if pattern == 'r4hxan3byx' or pattern == 'tfpvvl8beg'  :
+            pattern_values = {
+        "text": text,
+        }
+        else :
+            pattern_values = {
+        "name": "کاربر",
+        }
 
-    bulk_id = sms.send_pattern(
-        f"{pattern}",    # pattern code
-        "+983000505",      # originator
-        f"+98{UserInfo.objects.get(user = user).mobile}",  # recipient
-        pattern_values,  # pattern values
-    )
+        bulk_id = sms.send_pattern(
+            f"{pattern}",    # pattern code
+            "+983000505",      # originator
+            f"+98{UserInfo.objects.get(user = user).mobile}",  # recipient
+            pattern_values,  # pattern values
+        )
 
-    message = sms.get_message(bulk_id)
-    print(message)
-    print(f"+98999999999")
-    return True
+        message = sms.get_message(bulk_id)
+        print(message)
+        print(f"+98999999999")
+        return True
+    except:
+        pass
 
 def notification (user , date = '', title = '' , text = '', pattern='gf9zbtg61v'):
     note = Notification(user = user , title = title , text = text)

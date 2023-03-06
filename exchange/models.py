@@ -900,7 +900,7 @@ class Tickets(models.Model):
         days=0
         hours=0
         minutes=0
-        dif = (timezone.now - self.date).total_seconds()
+        dif = (timezone.now() - self.date).total_seconds()
         while (dif > 86400):
             dif = dif - 86400
             days = days + 1
@@ -1048,7 +1048,7 @@ class Notification(models.Model):
         days=0
         hours=0
         minutes=0
-        dif = (timezone.now - self.date).total_seconds()
+        dif = (timezone.now() - self.date).total_seconds()
         while (dif > 86400):
             dif = dif - 86400
             days = days + 1
@@ -1122,7 +1122,7 @@ class MainTradesBuyOrder(models.Model):
         days=0
         hours=0
         minutes=0
-        dif = (timezone.now - self.date).total_seconds()
+        dif = (timezone.now() - self.date).total_seconds()
         while (dif > 86400):
             dif = dif - 86400
             days = days + 1
@@ -1171,7 +1171,7 @@ class MainTradesSellOrder(models.Model):
         days=0
         hours=0
         minutes=0
-        dif = (timezone.now - self.date).total_seconds()
+        dif = (timezone.now() - self.date).total_seconds()
         while (dif > 86400):
             dif = dif - 86400
             days = days + 1
@@ -1218,7 +1218,7 @@ class ProTradesBuyOrder(models.Model):
         days=0
         hours=0
         minutes=0
-        dif = (timezone.now - self.date).total_seconds()
+        dif = (timezone.now() - self.date).total_seconds()
         while (dif > 86400):
             dif = dif - 86400
             days = days + 1
@@ -1264,7 +1264,7 @@ class ProTradesSellOrder(models.Model):
         days=0
         hours=0
         minutes=0
-        dif = (timezone.now - self.date).total_seconds()
+        dif = (timezone.now() - self.date).total_seconds()
         while (dif > 86400):
             dif = dif - 86400
             days = days + 1
