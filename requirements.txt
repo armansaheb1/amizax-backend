@@ -1,0 +1,15 @@
+django
+djangorestframework
+django-cors-headers
+djoser
+jsonfield
+ippanel
+django_rest_passwordreset
+django_crontab
+pyotp
+django_otp
+psycopg2-binary
+pillow
+base32_lib
+base58
+gunicorn
