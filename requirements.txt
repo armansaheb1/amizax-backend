@@ -3,7 +3,7 @@ djangorestframework
 django-cors-headers
 djoser
 jsonfield
-ippanel
+ippanel==1.1.0
 django_rest_passwordreset
 django_crontab
 pyotp

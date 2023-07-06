@@ -4,7 +4,7 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-ROOT = 'http://154.91.170.246'
+ROOT = 'https://www.amizax.com'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
@@ -48,7 +48,10 @@ CORS_ALLOWED_ORIGINS = [
     "https://www.amizax.com",
     "http://localhost:8080",
     "http://80.71.149.175",
-    "http://154.91.170.246"
+    "http://154.91.170.246",
+    "http://154.91.170.246:8080",
+    "http://194.5.195.183",
+    "http://192.168.100.107:8080"
 ]
 
 MIDDLEWARE = [
@@ -111,7 +114,7 @@ LOGGING = {
     'loggers': {
         'django': {
             'handlers': ['file'],
-            'level': 'DEBUG',
+            'level': 'WARNING',
             'propagate': True,
         },
     },
@@ -175,6 +178,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 
 CRONJOBS = [
+    ('* * * * *', 'django.core.management.call_command', ['TickerAll']),
     ('*/5 * * * *', 'exchange.cron.INDEXINFO'),
     ('* * * * *', 'exchange.cron.RIALTICKER'),
     ('* * * * *', 'exchange.cron.USDT')

@@ -1,7 +1,8 @@
 from chat.models import ChatSession
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import  BottomSticker, Cp_Currencies, Cp_Wallet, Cp_Withdraw, CpDepositRequest, General, LevelFee, Leverage, MainTradesBuyOrder, MainTradesSellOrder, News, PerpetualRequest, Posts, ProTradesBuyOrder, ProTradesSellOrder , ProTrades , MainTrades, Notification, ProfitList, TopSticker, VerifyAcceptRequest , VerifyMelliRequest , BankAccounts , VerifyBankAccountsRequest , Price , Currencies, Forgetrequest, UserInfo, Wallet, Verify, BankCards, Transactions, Settings , Subjects , Tickets, Pages, VerifyBankRequest, Staff, WithdrawRequest, buyoutrequest, buyrequest, exchangerequest, selloutrequest, sellrequest
+from .models import  BottomSticker, Cp_Currencies, Cp_Wallet, Cp_Withdraw, CpDepositRequest, General, LevelFee, Leverage, MainTradesBuyOrder, MainTradesSellOrder, News, PerpetualRequest, Posts, ProTradesBuyOrder, ProTradesSellOrder , ProTrades , MainTrades, Notification, ProfitList, TopSticker, VerifyAcceptRequest , VerifyMelliRequest , BankAccounts , VerifyBankAccountsRequest , Price , Currencies, Forgetrequest, UserInfo, Wallet, Verify, BankCards, Transactions, Settings , Subjects , Tickets, Pages, VerifyBankRequest, Staff, WithdrawRequest, buyoutrequest, buyrequest, exchangerequest, selloutrequest, sellrequest, Alert, P2pRequest, ChatRoom, ChatText, P2pBuyRequest
+from rest_framework.fields import CurrentUserDefault
 
 class UserInfoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -10,6 +11,7 @@ class UserInfoSerializer(serializers.ModelSerializer):
             "id",
             "first_name",
             "last_name",
+            "username",
             "mobile",
             "smsverify",
             "googleverify",
@@ -26,6 +28,12 @@ class UserInfoSerializer(serializers.ModelSerializer):
             "referalid",
             "get_referal"
         )
+
+class AlertSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Alert
+        fields = '__all__'
+
 
 class PriceSerializer(serializers.ModelSerializer):
     class Meta:
@@ -170,6 +178,16 @@ class CpCurrenciesSerializer(serializers.ModelSerializer):
             "withdraw_least_amount",
             "withdraw_tx_fee",
         )
+
+class ChainSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cp_Currencies
+        fields = (
+            "id",
+            "chain",
+        )        
+
+
 class WalletSerializer(serializers.ModelSerializer):
     class Meta:
         model = Wallet
@@ -495,17 +513,7 @@ class WithdrawSerializer(serializers.ModelSerializer):
 class GeneralSerializer(serializers.ModelSerializer):
     class Meta:
         model = General
-        fields = (
-            "name",
-            "email",
-            "mobile",
-            "whatsapp",
-            "telegram",
-            "instagram",
-            "telephone",
-            "rule",
-            "logo",
-        )
+        fields = '__all__'
 class PerpetualRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = PerpetualRequest
@@ -546,9 +554,9 @@ class TopStickerSerializer(serializers.ModelSerializer):
         model = TopSticker
         fields = (
             "id",
-            "title",
-            "text",
-            "get_image"
+            "link",
+            "img",
+            "get_pic"
         )
 
 class BottomStickerSerializer(serializers.ModelSerializer):
@@ -558,7 +566,7 @@ class BottomStickerSerializer(serializers.ModelSerializer):
             "id",
             "title",
             "text",
-            "get_image"
+            "icon"
         )
 
 class PostsSerializer(serializers.ModelSerializer):
@@ -579,4 +587,97 @@ class NewsSerializer(serializers.ModelSerializer):
             "title",
             "text",
             "get_image"
+        )
+        
+class Oltrade4Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = Leverage
+        fields = '__all__'
+
+class P2pRequestSerializer(serializers.ModelSerializer):
+
+
+    class Meta:
+        model = P2pRequest
+        fields =  (
+            "rid",
+            "user", 
+            "date",
+            "currency",
+            "price",
+            "balance",
+            "minimum_amount",
+            "maximum_time",
+            "chain",
+            "currency_name",
+            "get_age",
+            "change_world", 
+            "limit_world",
+            "limit_max",
+            "limit_min",
+            "done",
+            "get_user",
+            "status"
+        )
+        extra_kwargs = {'user': {'required': False}}
+
+class P2pBuyRequestSerializer(serializers.ModelSerializer):
+
+
+    class Meta:
+        model = P2pBuyRequest
+        fields =  (
+            "rid", 
+            "request",
+            "user",
+            "user2",
+            "get_user1",
+            "get_user2",
+            "wallet",
+            "memo",
+            "details",
+            "date",
+            "amount",
+            "status",
+            "get_request"
+        )
+
+        
+class ChatRoomSerializer(serializers.ModelSerializer):
+
+    def to_representation(self, instance):
+        data = super(ChatRoomSerializer, self).to_representation(instance)
+        if len(ChatText.objects.filter(room = instance.id).last().text )> 20:
+            data['last_message'] = ChatText.objects.filter(room = instance.id).last().text[0:20] + '...'
+        else:
+            data['last_message'] = ChatText.objects.filter(room = instance.id).last().text
+        return data
+
+    class Meta:
+        model = ChatRoom
+        fields =  (
+            "id",
+            "user1", 
+            "user2",
+            "date",
+            "last_update",
+            "read1",
+            "read2",
+            "get_user1",
+            "get_user2",
+            "unread1",
+            "unread2",
+        )
+
+
+class ChatTextSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ChatText
+        fields =  (
+            "user", 
+            "room",
+            "text",
+            "date",
+            "get_user"
         )

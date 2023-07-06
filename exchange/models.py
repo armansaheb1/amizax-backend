@@ -2,6 +2,7 @@ from typing import Text
 from django.db import models
 from io import BytesIO
 from PIL import Image
+import uuid
 from django.contrib.auth.models import User
 from django.db.models.query_utils import select_related_descend
 from django.utils import timezone
@@ -20,6 +21,8 @@ from django.core.mail import send_mail
 from django.utils.timezone import utc
 import pyotp
 import base32_lib
+from django.forms.models import model_to_dict
+
 
 @receiver(reset_password_token_created)
 def password_reset_token_created(sender, instance, reset_password_token, *args, **kwargs):
@@ -37,9 +40,11 @@ def password_reset_token_created(sender, instance, reset_password_token, *args, 
         [reset_password_token.user.email]
     )
 
-class transactionid(models.Model):
+class Transactionid(models.Model):
     user = models.ForeignKey(User , related_name='transactionid', on_delete=models.CASCADE)
+    
     transid = models.UUIDField(editable=False)
+    tid = models.CharField(max_length=1000, null=True)
     amount = models.BigIntegerField(null=True)
 
 class Referal(models.Model):
@@ -94,6 +99,13 @@ class UserInfo(models.Model):
 
     def get_referal(self):
         return 'https://www.amizax.com/register/' + str(self.referalid)
+    def username(self):
+        return self.user.username
+
+class SmsCode(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    number = models.CharField(max_length=20)
+    date = models.DateTimeField(default=datetime.now())
 
 
 class SmsVerified(models.Model):
@@ -113,7 +125,10 @@ class Review(models.Model):
     date = models.DateTimeField(default=timezone.now)
 
 class General(models.Model):
-    name= models.CharField(max_length=255)
+    en_name= models.CharField(max_length=255, default='')
+    fa_name= models.CharField(max_length=255, default='')
+    en_title= models.CharField(max_length=255, default='')
+    fa_title= models.CharField(max_length=255, default='')
     email= models.CharField(max_length=255)
     mobile= models.CharField(max_length=255)
     whatsapp= models.CharField(max_length=255)
@@ -124,6 +139,15 @@ class General(models.Model):
     logo = models.ImageField(upload_to='general' , null = True)
     USDTpercent = models.FloatField(null=True)
     USDTpercent2 = models.FloatField(null=True)
+    USDTpercent3 = models.FloatField(null=True)
+    sellpercent = models.FloatField(null=True)
+
+
+class Alert(models.Model):
+    page = models.CharField(max_length= 100)
+    title = models.CharField(max_length= 100)
+    text = models.CharField(max_length = 500)
+    icon = models.CharField(max_length = 10)
 
 
 class mobilecodes(models.Model):
@@ -139,7 +163,7 @@ class buyrequest(models.Model):
     ramount = models.BigIntegerField()
     rramount = models.FloatField(null=True)
     camount = models.FloatField()
-    act = models.IntegerField(default=0 )
+    act = models.IntegerField(default=2)
     def get_user(self):
         return self.user.username
     def get_age(self):
@@ -275,7 +299,7 @@ class exchangerequest(models.Model):
     currency2 = models.CharField(max_length=20)
     camount = models.FloatField()
     camount2 = models.FloatField()
-    act = models.IntegerField(default=0)
+    act = models.IntegerField(default=2)
     def get_user(self):
         return self.user.username
     def get_age(self):
@@ -528,6 +552,9 @@ class Cp_Wallet(models.Model):
     user = models.ForeignKey(User , on_delete=models.CASCADE)
     currency = models.ForeignKey(Cp_Currencies , on_delete=models.CASCADE ,default=0)
     balance = models.FloatField()
+
+    def __str__(self):
+        return self.user.username + '-' + self.currency.brand
     
     def get_currency(self) :
         return f'{self.currency.name}'
@@ -1019,13 +1046,19 @@ class Price(models.Model):
 
 class Leverage(models.Model):
     symbol = models.CharField(max_length=100)
+    fa_symbol = models.CharField(max_length=100, default= '')
     leverage = models.IntegerField(default=0)
-    buymin = models.FloatField(null=True)
-    buymax = models.FloatField(null=True)
-    sellmin = models.FloatField(null=True)
-    sellmax = models.FloatField(null=True)
+    volume = models.FloatField(default=0)
+    rial =models.FloatField(default=0)
+    change = models.FloatField(default = 0)
+    last = models.FloatField(default= 0)
+    buymin = models.FloatField(default=0)
+    buymax = models.FloatField(default=0)
+    sellmin = models.FloatField(default=0)
+    sellmax = models.FloatField(default=0)
+
     def __str__(self):
-        return self.symbol
+        return self.symbol + ' - ' + self.fa_symbol
 
 
 class PriceHistory(models.Model):
@@ -1083,9 +1116,11 @@ class Notification(models.Model):
 
 class MainTrades(models.Model):
     name = models.CharField(max_length=100 ,verbose_name=" نام ارز")
+    b_image = models.ImageField(upload_to='main_trades' , null = True)
+    s_image = models.ImageField(upload_to='main_trades' , null = True)
     brand = models.CharField(max_length=100 ,null=True,verbose_name=" نماد ارز")
-    scurrency = models.ForeignKey(Currencies , related_name='sellcurrency', on_delete=models.CASCADE , null=True)
-    bcurrency = models.ForeignKey(Currencies , related_name='buycurrency' , on_delete=models.CASCADE , null=True)
+    scurrency = models.ForeignKey(Currencies , related_name='sellcurrency', on_delete=models.CASCADE , default=1)
+    bcurrency = models.ForeignKey(Cp_Currencies , related_name='buycurrency' , on_delete=models.CASCADE , null=True)
 
     def __str__(self):
         return self.name
@@ -1095,15 +1130,27 @@ class MainTrades(models.Model):
     
     def get_bname(self):
         return self.bcurrency.name
+    
     def get_sname(self):
         return self.scurrency.name
+
+    def get_b_image(self):
+        if not self.b_image:
+            return ''
+        return f'{ROOT}/media/{self.b_image}'
+    
+    def get_s_image(self):
+        if not self.s_image:
+            return ''
+        return f'{ROOT}/media/{self.s_image}'
+    
 
 
 class ProTrades(models.Model):
     name = models.CharField(max_length=100 ,verbose_name=" نام ارز")
     brand = models.CharField(max_length=100 ,null=True,verbose_name=" نماد ارز")
-    scurrency = models.ForeignKey(Currencies , related_name='prosellcurrency', on_delete=models.CASCADE , null=True)
-    bcurrency = models.ForeignKey(Currencies , related_name='probuycurrency' , on_delete=models.CASCADE , null=True)
+    scurrency = models.ForeignKey(Cp_Currencies , related_name='prosellcurrency', on_delete=models.CASCADE , null=True)
+    bcurrency = models.ForeignKey(Cp_Currencies , related_name='probuycurrency' , on_delete=models.CASCADE , null=True)
 
     def __str__(self):
         return self.name
@@ -1116,8 +1163,9 @@ class MainTradesBuyOrder(models.Model):
     user = models.ForeignKey(User, related_name='maintradebuyorders' , on_delete=models.CASCADE)
     amount = models.FloatField()
     price = models.FloatField()
-    start = models.FloatField(null=True)
     date = models.DateTimeField(default=timezone.now)
+    left = models.FloatField(default=0)
+    status = models.BooleanField(default=False)
     def get_age(self):
         days=0
         hours=0
@@ -1165,8 +1213,9 @@ class MainTradesSellOrder(models.Model):
     user = models.ForeignKey(User, related_name='maintradesellorders' , on_delete=models.CASCADE)
     amount = models.FloatField()
     price = models.FloatField()
-    start = models.FloatField(null=True)
     date = models.DateTimeField(default=timezone.now)
+    left = models.FloatField(default=0)
+    status = models.BooleanField(default=False)
     def get_age(self):
         days=0
         hours=0
@@ -1301,26 +1350,23 @@ class ProTradesSellOrder(models.Model):
         return self.trade.bcurrency.brand
 
 class TopSticker(models.Model):
-    title = models.ImageField(upload_to='docs' , null = True)
-    text = models.CharField(max_length=16 , null=True)
-    img = models.BooleanField(default = False)
+    link = models.CharField(max_length=300, null=True)
+    img = models.ImageField(upload_to='main_page' , null = True)
 
-    def get_image(self):
+    def get_pic(self):
         return f'{ROOT}/media/{self.img}'
 
 
 class BottomSticker(models.Model):
-    title = models.ImageField(upload_to='docs' , null = True)
-    text = models.CharField(max_length=16 , null=True)
-    img = models.BooleanField(default = False)
-
-    def get_image(self):
-        return f'{ROOT}/media/{self.img}'
+    title = models.CharField(max_length=100, null=True)
+    text = models.CharField(max_length=1000 , null=True)
+    icon = models.CharField(max_length=300, default='')
 
 class Posts(models.Model):
-    title = models.ImageField(upload_to='docs' , null = True)
-    text = models.CharField(max_length=16 , null=True)
-    img = models.BooleanField(default = False)
+    title = models.CharField(max_length=100 , null=True)
+    minitext = models.CharField(max_length=300 , null=True)
+    text = models.CharField(max_length=2000 , null=True)
+    img = models.ImageField(upload_to='docs' , null = True)
 
     def get_image(self):
         return f'{ROOT}/media/{self.img}'
@@ -1373,3 +1419,158 @@ class PlanProfitList(models.Model):
     def __str__(self):
         return f"{self.userid}{self.invid}"
     
+
+class P2pRequest(models.Model):
+    rid = models.UUIDField(default=uuid.uuid4, editable=False, max_length=8, primary_key=True)
+    user = models.ForeignKey(User , related_name='p2ps' , on_delete=models.CASCADE)
+    date = models.DateTimeField(default=timezone.now) 
+    currency = models.ForeignKey(Cp_Currencies, related_name='p2ps', on_delete=models.CASCADE)
+    price = models.FloatField(null=True)
+    balance = models.FloatField()
+    minimum_amount = models.FloatField()
+    maximum_time = models.IntegerField()
+    change_world = models.BooleanField(default=False)
+    limit_world = models.BooleanField(default=False)
+    limit_max = models.FloatField(null=True)
+    limit_min = models.FloatField(null=True)
+    done = models.FloatField(null=True)
+    status = models.IntegerField(default= 0)
+
+    def get_age(self):
+        days=0
+        hours=0
+        minutes=0
+        dif = (timezone.now() - self.date).total_seconds()
+        while (dif > 86400):
+            dif = dif - 86400
+            days = days + 1
+        while (dif > 3600):
+            dif = dif - 3600
+            hours = hours + 1
+        while (dif > 60):
+            dif = dif - 60
+            minutes = minutes + 1
+
+
+        if hours > 0:
+            hours = f' {hours}  ساعت  و'
+        else:
+            hours = ''
+
+
+        if minutes > 0:
+            minutes = f' {minutes} دقیقه  '
+        else:
+            minutes = ''
+
+
+
+        if days > 0:
+            days = f'{days}  روز و '
+        else:
+            days = ''
+
+
+        return  days + hours + minutes 
+
+    def __str__(self):
+        return f"{self.user.username}"
+    
+    def get_user(self):
+        return self.user.username
+    
+    def chain(self):
+        return self.currency.chain
+    
+    def currency_name(self):
+        return self.currency.brand
+
+
+class ChatRoom(models.Model):
+    user1 = models.ForeignKey(User , related_name='chats1' , on_delete=models.CASCADE)
+    user2 = models.ForeignKey(User , related_name='chats2' , on_delete=models.CASCADE)
+    date = models.DateTimeField(default=timezone.now)
+    last_update = models.DateTimeField(default=timezone.now)
+    read1 = models.BooleanField(default=True)
+    read2 = models.BooleanField(default=False)
+    unread1 = models.IntegerField()
+    unread2 = models.IntegerField()
+
+    def get_user1(self):
+        return self.user1.username
+
+    def get_user2(self):
+        return self.user2.username
+
+
+class ChatText(models.Model):
+    user = models.ForeignKey(User , related_name='chattexts' , on_delete=models.CASCADE)
+    room = models.ForeignKey(ChatRoom, related_name='rooms', on_delete=models.CASCADE) 
+    text = models.CharField(max_length=100)
+    date = models.DateTimeField(default=timezone.now)
+
+    def get_user(self):
+        return self.user.username
+
+    
+
+class P2pBuyRequest(models.Model):
+    rid = models.UUIDField(default=uuid.uuid4, editable=False, max_length=10, primary_key=True)
+    request = models.ForeignKey(P2pRequest, related_name='buyrequests', on_delete=models.CASCADE)
+    user = models.ForeignKey(User , related_name='users' , on_delete=models.CASCADE)
+    user2 = models.ForeignKey(User , related_name='sellers' , on_delete=models.CASCADE, null=True)
+    date = models.DateTimeField(default=timezone.now) 
+    wallet = models.CharField(max_length=200, null=True)
+    memo = models.CharField(max_length=100, null=True)
+    details = models.CharField(max_length=200, null=True)
+    amount = models.FloatField()
+    status = models.IntegerField(default= 0)
+
+    def get_age(self):
+        days=0
+        hours=0
+        minutes=0
+        dif = (timezone.now() - self.date).total_seconds()
+        while (dif > 86400):
+            dif = dif - 86400
+            days = days + 1
+        while (dif > 3600):
+            dif = dif - 3600
+            hours = hours + 1
+        while (dif > 60):
+            dif = dif - 60
+            minutes = minutes + 1
+
+
+        if hours > 0:
+            hours = f' {hours}  ساعت  و'
+        else:
+            hours = ''
+
+
+        if minutes > 0:
+            minutes = f' {minutes} دقیقه  '
+        else:
+            minutes = ''
+
+
+
+        if days > 0:
+            days = f'{days}  روز و '
+        else:
+            days = ''
+
+
+        return  days + hours + minutes 
+
+    def __str__(self):
+        return f"{self.user.username}"
+    
+    def get_request(self):
+        return {**model_to_dict(self.request) , **{'currency_name' : self.request.currency_name()}}
+
+    def get_user1(self):
+        return self.user.username
+
+    def get_user2(self):
+        return self.user2.username

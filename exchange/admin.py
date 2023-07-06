@@ -1,9 +1,11 @@
 from django.contrib import admin
 from django.core import mail
 
-from .models import Cp_Currencies, Cp_Wallet, CpDepositRequest, General , Cp_Withdraw, LevelFee, Leverage, MainTradesBuyOrder, MainTradesSellOrder , MainTrades, Perpetual, PerpetualRequest, ProTrades, Notification, ProfitList, Review, SmsVerified, VerifyAcceptRequest, VerifyMelliRequest , BankAccounts , VerifyBankAccountsRequest , Price , Staff, UserInfo , Currencies , Wallet , Verify , BankCards, Transactions, Settings, Subjects, Tickets, Pages, Forgetrequest, VerifyBankRequest, Indexprice, WithdrawRequest, buyapp, buyoutrequest, buyrequest, exchangerequest, mobilecodes, selloutrequest, sellrequest
+from .models import Cp_Currencies, Cp_Wallet, CpDepositRequest, General , Cp_Withdraw, LevelFee, Leverage, MainTradesBuyOrder, MainTradesSellOrder , MainTrades, Perpetual, PerpetualRequest, ProTrades, Notification, ProfitList, Review, SmsVerified, VerifyAcceptRequest, VerifyMelliRequest , BankAccounts , VerifyBankAccountsRequest , Price , Staff, UserInfo , Currencies , Wallet , Verify , BankCards, Transactions, Settings, Subjects, Tickets, Pages, Forgetrequest, VerifyBankRequest, Indexprice, WithdrawRequest, buyapp, buyoutrequest, buyrequest, exchangerequest, mobilecodes, selloutrequest, sellrequest, Posts, TopSticker, BottomSticker, Alert, P2pRequest, ChatText, ChatRoom, P2pBuyRequest, SmsCode
 # Register your models here.
 admin.site.register(WithdrawRequest)
+admin.site.register(TopSticker)
+admin.site.register(BottomSticker)
 admin.site.register(CpDepositRequest)
 admin.site.register(exchangerequest)
 admin.site.register(buyapp)
@@ -35,6 +37,7 @@ admin.site.register(Settings)
 admin.site.register(Subjects)
 admin.site.register(Tickets)
 admin.site.register(Pages)
+admin.site.register(Posts)
 admin.site.register(Forgetrequest)
 admin.site.register(VerifyBankRequest)
 admin.site.register(Staff)
@@ -47,3 +50,9 @@ admin.site.register(MainTrades)
 admin.site.register(ProTrades)
 admin.site.register(MainTradesBuyOrder)
 admin.site.register(MainTradesSellOrder)
+admin.site.register(Alert)
+admin.site.register(P2pRequest)
+admin.site.register(ChatRoom)
+admin.site.register(ChatText)
+admin.site.register(P2pBuyRequest)
+admin.site.register(SmsCode)

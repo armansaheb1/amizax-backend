@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/static/bootstrap.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    @font-face {
+      font-family: "iranyekan-fanum";
+      src: url(/static/iranyekanwebmediumfanum.woff2) format("truetype");
+    }
+    body{
+        background-color: #25282e;
+        font-family: "iranyekan-fanum"
+    }
+</style>
+<body style="color: white; padding: 10%; text-align: center;">
+    <div class="card">
+        <div class="card-header">
+            <h3>تراکنش ناموفق</h3>
+        </div>
+        <div style="text-align: center;" class="card-body">
+            <h4 style="color: red">{{message}}</h4><br>
+            <p>در <a style="color: red" id="counter">3</a> ثانیه به سایت باز میگردید</p>
+        </div>
+    </div>
+    
+    
+</body>
+<script>
+    setTimeout(() => {
+        document.getElementById('counter').innerHTML = parseInt(document.getElementById('counter').innerHTML) - 1
+    }, 1000);
+    setTimeout(() => {
+        document.getElementById('counter').innerHTML = parseInt(document.getElementById('counter').innerHTML) - 1
+    }, 2000);
+    setTimeout(() => {
+        document.getElementById('counter').innerHTML = parseInt(document.getElementById('counter').innerHTML) - 1
+    }, 3000);
+    setTimeout(() => {
+        window.location.href = 'https://amizax.com/deposit';
+    }, 4000);
+</script>
+</html>

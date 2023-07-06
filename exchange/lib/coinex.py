@@ -103,6 +103,12 @@ class CoinEx:
 
     def balance_deposit_address_new(self, coin_type, **params):
         return self._v1('balance/deposit/address/{}'.format(coin_type), method='post', auth=True, **params)
+    
+    def sub_account_create(self, sub_user_name, **params):
+        return self._v1('sub_account/register', method='post', auth=True, sub_user_name= sub_user_name, **params)
+
+    def sub_account_api_create(self, sub_user_name, allowed_ips= ['154.91.170.246'], allow_trade= True, **params):
+        return self._v1('sub_account/auth/api', method='post', auth=True, sub_user_name= sub_user_name, allowed_ips= allowed_ips, allow_trade= allow_trade, **params)
 
     def sub_account_transfer(self, coin_type, amount, **params):
         return self._v1('sub_account/transfer', method='post', auth=True, coin_type=coin_type, amount=amount, **params)

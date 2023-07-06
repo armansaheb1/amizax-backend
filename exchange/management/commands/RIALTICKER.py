@@ -6,9 +6,10 @@ import time
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        rial = requests.get(url = 'http://api.navasan.tech/latest/?api_key=1oFGrKOHDblbSXNvErx6Y2XIqMghp2h9')   
+        rial = requests.get(url = 'http://api.navasan.tech/latest/?api_key=freeKLG7y5B7iUgVQl4JFjIE7WTXUV6n')   
         r = rial.json()
         price = Price.objects.get(id = 1)
-        price.rial = r['usd_buy']['value'] * 10
-        price.usd = r['usd_buy']['value'] * 10
+        price.rial = float(r['usd_buy']['value']) * 10
+        price.usd = float(r['usd_buy']['value']) * 10
+        print(float(r['usd_buy']['value']) * 10)
         price.save()

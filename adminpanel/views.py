@@ -155,12 +155,14 @@ class USDTP(APIView):
 
     def get(self , request , format=None):
         query = General.objects.get(id = 1 )
-        return Response({'USDTp':query.USDTpercent , 'USDTp2':query.USDTpercent2})
+        return Response({'USDTp':query.USDTpercent , 'USDTp2':query.USDTpercent2, 'USDTp3':query.USDTpercent3, 'sellpercent': query.sellpercent})
 
     def post(self, request , format=None):
         query = General.objects.get(id = 1 )
         query.USDTpercent = request.data['USDTp']
         query.USDTpercent2 = request.data['USDTp2']
+        query.USDTpercent3 = request.data['USDTp3']
+        query.sellpercent = request.data['sellpercent']
         query.save()
         return Response(query.USDTpercent)
 
@@ -1290,3 +1292,5 @@ class levelfee(APIView):
         serializer.exchange = request.data['exchange']
         serializer.save()
         return Response( status=status.HTTP_201_CREATED)
+
+

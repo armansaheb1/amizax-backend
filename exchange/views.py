@@ -1,6 +1,9 @@
 from requests.sessions import Request
 from django.contrib.auth.hashers import check_password
 from exchange.lib import request_client
+from rest_framework.generics import GenericAPIView
+from rest_framework import mixins
+from rest_framework.viewsets import ModelViewSet
 from django.core.exceptions import ValidationError
 from typing import Text
 from django import http
@@ -17,10 +20,10 @@ from rest_framework import request, serializers
 from django.http import HttpResponse , Http404 
 from rest_framework import status
 from rest_framework import authentication
-from .serializers import BottomStickerSerializer, BuySerializer, BuyoutSerializer, CpCurrenciesSerializer, CpDepositRequestSerializer, CpWalletSerializer, ExchangeSerializer, GeneralSerializer, LevelFeeSerializer, LeverageSerializer, NewsSerializer, PostsSerializer, ProTradesBuyOrderSerializer, ProTradesSellOrderSerializer , MainTradesBuyOrderSerializer, MainTradesSellOrderSerializer, ProTradesSerializer, MainTradesSerializer, NotificationSerializer, BankAccountsSerializer, SellSerializer, TopStickerSerializer, VerifyAcceptRequestSerializer, VerifyBankAccountsRequest , PriceSerializer , StaffSerializer, UserInfoSerializer, VerifyBankAccountsRequestSerializer, VerifyMelliRequestSerializer , WalletSerializer , CurrenciesSerializer ,VerifySerializer, BankCardsSerializer, TransactionsSerializer, SettingsSerializer, SubjectsSerializer, TicketsSerializer, PagesSerializer , UserSerializer , ForgetSerializer, VerifyBankRequestSerializer, WithdrawSerializer, selloutSerializer
+from .serializers import BottomStickerSerializer, BuySerializer, BuyoutSerializer, CpCurrenciesSerializer, CpDepositRequestSerializer, CpWalletSerializer, ExchangeSerializer, GeneralSerializer, LevelFeeSerializer, LeverageSerializer, NewsSerializer, PostsSerializer, ProTradesBuyOrderSerializer, ProTradesSellOrderSerializer , MainTradesBuyOrderSerializer, MainTradesSellOrderSerializer, ProTradesSerializer, MainTradesSerializer, NotificationSerializer, BankAccountsSerializer, SellSerializer, TopStickerSerializer, VerifyAcceptRequestSerializer, VerifyBankAccountsRequest , PriceSerializer , StaffSerializer, UserInfoSerializer, VerifyBankAccountsRequestSerializer, VerifyMelliRequestSerializer , WalletSerializer , CurrenciesSerializer ,VerifySerializer, BankCardsSerializer, TransactionsSerializer, SettingsSerializer, SubjectsSerializer, TicketsSerializer, PagesSerializer , UserSerializer , ForgetSerializer, VerifyBankRequestSerializer, WithdrawSerializer, selloutSerializer, Oltrade4Serializer, AlertSerializer, P2pRequestSerializer, ChainSerializer, ChatRoomSerializer, ChatTextSerializer, P2pBuyRequestSerializer
 from rest_framework.views import APIView 
 from rest_framework.response import Response
-from .models import BottomSticker, General, Indexprice , Cp_Currencies, Cp_Wallet, Cp_Withdraw, LevelFee, Leverage, News, Perpetual, PerpetualRequest, Posts, PriceHistory, ProfitList, Referal, Review, SmsVerified, TopSticker, VerifyAcceptRequest, buyapp, buyoutrequest, buyrequest, exchangerequest, mobilecodes, ProTradesSellOrder, MainTradesSellOrder,ProTradesBuyOrder, MainTradesBuyOrder, ProTrades, MainTrades, Notification , VerifyBankAccountsRequest , BankAccounts, Price, Staff,  UserInfo , Currencies, VerifyMelliRequest , Wallet , Verify , BankCards, Transactions, Settings, Subjects, Tickets, Pages , Forgetrequest , VerifyBankRequest, selloutrequest, sellrequest, transactionid
+from .models import BottomSticker, General, Indexprice , Cp_Currencies, Cp_Wallet, Cp_Withdraw, LevelFee, Leverage, News, Perpetual, PerpetualRequest, Posts, PriceHistory, ProfitList, Referal, Review, SmsVerified, TopSticker, VerifyAcceptRequest, buyapp, buyoutrequest, buyrequest, exchangerequest, mobilecodes, ProTradesSellOrder, MainTradesSellOrder,ProTradesBuyOrder, MainTradesBuyOrder, ProTrades, MainTrades, Notification , VerifyBankAccountsRequest , BankAccounts, Price, Staff,  UserInfo , Currencies, VerifyMelliRequest , Wallet , Verify , BankCards, Transactions, Settings, Subjects, Tickets, Pages , Forgetrequest , VerifyBankRequest, selloutrequest, sellrequest, Transactionid, Alert, P2pRequest, ChatRoom, ChatText, P2pBuyRequest, SmsCode
 from django.contrib.auth.models import AbstractUser , User, UserManager
 from django.contrib.auth.decorators import user_passes_test
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
@@ -124,7 +127,6 @@ class login(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request, format=None):
-        reqBody = json.loads(request.body)
         utc=pytz.UTC
         if len(User.objects.filter(username = request.data['username']))>0:
             if len(UserInfo.objects.filter(user = User.objects.get(username = request.data['username'])))>0:
@@ -133,10 +135,9 @@ class login(APIView):
                         ver = SmsVerified.objects.get(number = UserInfo.objects.get(user = User.objects.get(username = request.data['username'])).mobile)
                         ver.delete()
                         data = {}
-                        reqBody = json.loads(request.body)
-                        username = reqBody['username']
+                        username = request.data['username']
                         print(username)
-                        password = reqBody['password']
+                        password = request.data['password']
                         try:
                             Account = User.objects.get(username=username)
                         except BaseException as e:
@@ -145,26 +146,23 @@ class login(APIView):
                         print(token)
                         if not check_password(password, Account.password):
                             return Response({"رمز عبور اشتباه است"} , status=status.HTTP_400_BAD_REQUEST)
-
                         if Account:
                             if Account.is_active:
                                 print(request.user)
                                 data["message"] = "user logged in"
                                 data["username"] = Account.email
-
                                 Res = {"data": data, "auth_token": token}
-                                if len(UserInfo.objects.filter(user = User.objects.get(username = reqBody['username'])))>0:
-                                    if UserInfo.objects.get(user = User.objects.get(username = reqBody['username'])).mobile:
-                                        notification(user = User.objects.get(username = reqBody['username']), title='Amizax', text = 'با موفقیت به حساب خود وارد شدید' ,  pattern='gf9zbtg61v')
-                                if len(UserInfo.objects.filter(user = User.objects.get(username = reqBody['username'])))<1:
-                                    ui = UserInfo(user = User.objects.get(username = reqBody['username']),first_name='',last_name='')
+                                if len(UserInfo.objects.filter(user = User.objects.get(username = request.data['username'])))>0:
+                                    if UserInfo.objects.get(user = User.objects.get(username = request.data['username'])).mobile:
+                                        notification(user = User.objects.get(username = request.data['username']), title='Amizax', text = 'با موفقیت به حساب خود وارد شدید' ,  pattern='gf9zbtg61v')
+                                if len(UserInfo.objects.filter(user = User.objects.get(username = request.data['username'])))<1:
+                                    ui = UserInfo(user = User.objects.get(username = request.data['username']),first_name='',last_name='')
                                     ui.save()
-                                    notification(user = User.objects.get(username = reqBody['username']), title='Amizax', text = 'با موفقیت به حساب خود وارد شدید' , pattern='gf9zbtg61v')
+                                    notification(user = User.objects.get(username = request.data['username']), title='Amizax', text = 'با موفقیت به حساب خود وارد شدید' , pattern='gf9zbtg61v')
                                 use = UserInfo.objects.get(user=Account)
                                 use.last_visit=timezone.now()
                                 use.save()
                                 return Response(Res)
-
                             else:
                                 return Response({"حساب شما مسدود شده است"} , status=status.HTTP_400_BAD_REQUEST)
 
@@ -172,10 +170,10 @@ class login(APIView):
                             return Response({"حسابی با این مشخصات یافت نشد "} , status=status.HTTP_400_BAD_REQUEST)
                     else:
                         vcode = randrange(123456,999999)
-                        a = mobilecodes.objects.filter(number = UserInfo.objects.get(user = User.objects.get(username = reqBody['username'])).mobile)
+                        a = mobilecodes.objects.filter(number = UserInfo.objects.get(user = User.objects.get(username = request.data['username'])).mobile)
                         for item in a:
                             item.delete()
-                        c = mobilecodes(number = UserInfo.objects.get(user = User.objects.get(username = reqBody['username'])).mobile, code = vcode)
+                        c = mobilecodes(number = UserInfo.objects.get(user = User.objects.get(username = request.data['username'])).mobile, code = vcode)
                         c.save()
                         sms = Client("qsVtNKDEKtFZ9wgS4o1Vw81Pjt-C3m469UJxCsUqtBA=")
 
@@ -186,7 +184,7 @@ class login(APIView):
                         bulk_id = sms.send_pattern(
                             "s1a8zjq33u",    # pattern code
                             "+983000505",      # originator
-                            f"+98{UserInfo.objects.get(user = User.objects.get(username = reqBody['username'])).mobile}",  # recipient
+                            f"+98{UserInfo.objects.get(user = User.objects.get(username = request.data['username'])).mobile}",  # recipient
                             pattern_values,  # pattern values
                         )
 
@@ -194,9 +192,9 @@ class login(APIView):
                         return Response(1)
                 else:
                     data = {}
-                    username = reqBody['username']
+                    username = request.data['username']
                     print(username)
-                    password = reqBody['password']
+                    password = request.data['password']
                     try:
 
                         Account = User.objects.get(username=username)
@@ -214,13 +212,13 @@ class login(APIView):
                             data["username"] = Account.username
 
                             Res = {"data": data, "auth_token": token}
-                            if len(UserInfo.objects.filter(user = User.objects.get(username = reqBody['username'])))>0:
-                                if UserInfo.objects.get(user = User.objects.get(username = reqBody['username'])).mobile:
-                                    notification(user = User.objects.get(username = reqBody['username']), title='Amizax',text = 'با موفقیت به حساب خود وارد شدید', pattern='gf9zbtg61v')
-                            if len(UserInfo.objects.filter(user = User.objects.get(username = reqBody['username'])))<1:
-                                ui = UserInfo(user = User.objects.get(username = reqBody['username']),first_name='',last_name='')
+                            if len(UserInfo.objects.filter(user = User.objects.get(username = request.data['username'])))>0:
+                                if UserInfo.objects.get(user = User.objects.get(username = request.data['username'])).mobile:
+                                    notification(user = User.objects.get(username = request.data['username']), title='Amizax',text = 'با موفقیت به حساب خود وارد شدید', pattern='gf9zbtg61v')
+                            if len(UserInfo.objects.filter(user = User.objects.get(username = request.data['username'])))<1:
+                                ui = UserInfo(user = User.objects.get(username = request.data['username']),first_name='',last_name='')
                                 ui.save()
-                                notification(user = User.objects.get(username = reqBody['username']), title='Amizax',text = 'با موفقیت به حساب خود وارد شدید', pattern='gf9zbtg61v')
+                                notification(user = User.objects.get(username = request.data['username']), title='Amizax',text = 'با موفقیت به حساب خود وارد شدید', pattern='gf9zbtg61v')
                             use = UserInfo.objects.get(user=Account)
                             use.last_visit=timezone.now()
                             use.save()
@@ -233,9 +231,9 @@ class login(APIView):
                         return Response({"حسابی با این مشخصات یافت نشد "} , status=status.HTTP_400_BAD_REQUEST)
             else:
                 data = {}
-                username = reqBody['username']
+                username = request.data['username']
                 print(username)
-                password = reqBody['password']
+                password = request.data['password']
                 try:
 
                     Account = User.objects.get(username=username)
@@ -253,13 +251,13 @@ class login(APIView):
                         data["username"] = Account.username
 
                         Res = {"data": data, "auth_token": token}
-                        if len(UserInfo.objects.filter(user = User.objects.get(username = reqBody['username'])))>0:
-                            if UserInfo.objects.get(user = User.objects.get(username = reqBody['username'])).mobile:
-                                notification(user = User.objects.get(username = reqBody['username']), title='Amizax',text = 'با موفقیت به حساب خود وارد شدید', pattern='gf9zbtg61v')
-                        if len(UserInfo.objects.filter(user = User.objects.get(username = reqBody['username'])))<1:
-                            ui = UserInfo(user = User.objects.get(username = reqBody['username']),first_name='',last_name='',phone='')
+                        if len(UserInfo.objects.filter(user = User.objects.get(username = request.data['username'])))>0:
+                            if UserInfo.objects.get(user = User.objects.get(username = request.data['username'])).mobile:
+                                notification(user = User.objects.get(username = request.data['username']), title='Amizax',text = 'با موفقیت به حساب خود وارد شدید', pattern='gf9zbtg61v')
+                        if len(UserInfo.objects.filter(user = User.objects.get(username = request.data['username'])))<1:
+                            ui = UserInfo(user = User.objects.get(username = request.data['username']),first_name='',last_name='',phone='')
                             ui.save()
-                            notification(user = User.objects.get(username = reqBody['username']), title='Amizax',text = 'با موفقیت به حساب خود وارد شدید', pattern='gf9zbtg61v')
+                            notification(user = User.objects.get(username = request.data['username']), title='Amizax',text = 'با موفقیت به حساب خود وارد شدید', pattern='gf9zbtg61v')
                         use = UserInfo.objects.get(user=Account)
                         use.last_visit=timezone.now()
                         use.save()
@@ -276,7 +274,7 @@ class login(APIView):
 @method_decorator(csrf_exempt, name='dispatch')
 class loginsms(APIView):
     def post(self, request, format=None):
-        reqBody = json.loads(request.body)
+        
         c = mobilecodes.objects.get(number = UserInfo.objects.get(user = User.objects.get(username = request.data['username'])).mobile)
         if(int(request.data['code']) == int(c.code)):
             smss = SmsVerified.objects.filter(number = UserInfo.objects.get(user = User.objects.get(username = request.data['username'])).mobile)
@@ -293,21 +291,82 @@ class addreferal(APIView):
             ref = Referal(inviting = User.objects.get(username = request.data['username']) , inviter = UserInfo.objects.get(referalid = request.data['referal']).user)
             ref.save()
             return Response(status=status.HTTP_200_OK)
+
 class welcomesms(APIView):
     def get(self, request, format=None):
             notification(user = request.user, title='Amizax', text='خود وارد شدید Amizax با موفقیت به حساب  ')
             return Response(status=status.HTTP_200_OK)
+    
+
+NP_MERCHANT = '5a273bf9-c01e-48bd-abd2-816563ad61cc'
+NP_API_REQUEST = "https://nextpay.org/nx/gateway/token"
+NP_API_VERIFY = "https://nextpay.org/nx/gateway/verify"
+NP_CallbackURL = 'https://amizax.com/api/v1/verifys2/'
+description = "توضیحات مربوط به تراکنش را در این قسمت وارد کنید" 
+email = 'email@example.com'  
+mobile = '09123456789'  
+
+
+class createsmscode(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, authentication.TokenAuthentication ]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if not len(SmsCode.objects.filter(user = request.user, date__gte= datetime.now() - timedelta(minutes = 2))):
+            for item in SmsCode.objects.filter(user = request.user):
+                item.delete()
+            vcode = randrange(123456,999999)
+            sc = SmsCode.objects.create(number = vcode, user= request.user)
+            sc.save()
+            sms = Client("qsVtNKDEKtFZ9wgS4o1Vw81Pjt-C3m469UJxCsUqtBA=")
+
+            pattern_values = {
+            "verification-code": f"{vcode}",
+            }
+
+            bulk_id = sms.send_pattern(
+                "s1a8zjq33u",    # pattern code
+                "+983000505",      # originator
+                f"+98{UserInfo.objects.get(user = request.user).mobile}",  # recipient
+                pattern_values,  # pattern values
+            )
+
+            message = sms.get_message(bulk_id)
+            return Response()
+        else:
+            return Response(status = status.HTTP_400_BAD_REQUEST)
+
+
+
+
+class send_next(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, authentication.TokenAuthentication ]
+    permission_classes = [IsAuthenticated]
+
+    def post(self , request , format=None):
+        amount = int(request.data['amount'])/10
+        uid = str(uuid.uuid4())
+        
+        payload='api_key=5a273bf9-c01e-48bd-abd2-816563ad61cc&amount=' +str(amount)+ '&order_id=&customer_phone=&callback_uri=' + NP_CallbackURL + '&allowed_card=' + str(request.data['card'])
+        headers = {
+        'User-Agent': 'PostmanRuntime/7.26.8',
+        'Content-Type': 'application/x-www-form-urlencoded'
+        }
+        trans = requests.request("POST", NP_API_REQUEST, headers=headers, data=payload).json()
+        tr = Transactionid(user = request.user , transid = uid , amount = int(request.data['amount']), tid = trans['trans_id'])
+        tr.save()
+        if not trans['trans_id']:
+            return HttpResponse(trans['code']) 
+        return Response(f"https://nextpay.org/nx/gateway/payment/{trans['trans_id']}")
 
 
 MERCHANT = '2a4c4e4e-3e4c-431f-80f5-3b5172b763c2'
 ZP_API_REQUEST = "https://api.zarinpal.com/pg/v4/payment/request.json"
 ZP_API_VERIFY = "https://api.zarinpal.com/pg/v4/payment/verify.json"
 ZP_API_STARTPAY = "https://www.zarinpal.com/pg/StartPay/{authority}"
-amount = 11000  # Rial / Required
-description = "توضیحات مربوط به تراکنش را در این قسمت وارد کنید"  # Required
-email = 'email@example.com'  # Optional
-mobile = '09123456789'  # Optional
-# Important: need to edit for realy server.
+description = "توضیحات مربوط به تراکنش را در این قسمت وارد کنید" 
+email = 'email@example.com'  
+mobile = '09123456789'  
 CallbackURL = 'https://amizax.com/api/v1/verifys/'
 
 class send_request(APIView):
@@ -316,7 +375,7 @@ class send_request(APIView):
 
     def post(self , request , format=None):
         uid = str(uuid.uuid4())
-        tr = transactionid(user = request.user , transid = uid , amount = int(request.data['amount']))
+        tr = Transactionid(user = request.user , transid = uid , amount = int(request.data['amount']))
         tr.save()
         req_data = {
             "merchant_id": MERCHANT,
@@ -351,7 +410,7 @@ class send_request2(APIView):
             amount = 400000000
         elif int(request.data['option']) == 3:
             amount = 500000000
-        tr = transactionid(user = request.user , transid = uid , amount = amount)
+        tr = Transactionid(user = request.user , transid = uid , amount = amount)
         tr.save()
         req_data = {
             "merchant_id": MERCHANT,
@@ -375,7 +434,7 @@ class send_request2(APIView):
 def verifys(request, transid):
     t_status = request.GET.get('Status')
     t_authority = request.GET['Authority']
-    transactioni = transactionid.objects.get(transid = transid)
+    transactioni = Transactionid.objects.get(transid = transid)
     if request.GET.get('Status') == 'OK':
         req_header = {"accept": "application/json",
                       "content-type": "application/json'"}
@@ -414,11 +473,38 @@ def verifys(request, transid):
     else:
         return HttpResponse('Transaction failed or canceled by user')
 
+def verifys2(request):
+    tid = request.GET.get('trans_id', '')
+    transactioni = Transactionid.objects.get(tid = tid)
+    amount = request.GET.get('amount', '')
+    payload='api_key=5a273bf9-c01e-48bd-abd2-816563ad61cc&amount='+str(amount)+ f'&trans_id={tid}'
+    headers = {
+    'User-Agent': 'PostmanRuntime/7.26.8',
+    'Content-Type': 'application/x-www-form-urlencoded'
+    }
+
+    response = requests.request("POST", NP_API_VERIFY, headers=headers, data=payload).json()
+    if int(response['code']) == 0:
+        user = transactioni.user
+        if len(Wallet.objects.filter(user = user , currency = Currencies.objects.get(id = 1))) > 0:
+            wallet = Wallet.objects.get(user = user , currency = Currencies.objects.get(id = 1))
+            wallet.amount = wallet.amount + int(transactioni.amount)
+            wallet.save()
+        else:
+            wa = Wallet(user = user , currency = Currencies.objects.get(id = 1), amount = int(transactioni.amount))
+            wa.save()
+        tra = Transactions(user = user, amount= transactioni.amount, act = 1, currency = Currencies.objects.get(id = 1))
+        tra.save()
+        return redirect('https://amizax.com/success')
+    elif int(response['code']) == '-6':
+        return render(request, 'failure.html', {'message': 'کارت استفاده شد همخوانی ندارد'})
+    else:
+        return render(request, 'failure.html', {'message': 'خطایی رخ داده است'})
 
 def buyappback(request, transid):
     t_status = request.GET.get('Status')
     t_authority = request.GET['Authority']
-    transactioni = transactionid.objects.get(transid = transid)
+    transactioni = Transactionid.objects.get(transid = transid)
     if request.GET.get('Status') == 'OK':
         req_header = {"accept": "application/json",
                       "content-type": "application/json'"}
@@ -455,15 +541,6 @@ def buyappback(request, transid):
     else:
         return HttpResponse('Transaction failed or canceled by user')
 
-class bsc(APIView):
-
-    def get(self , request , format=None):
-
-        hd_wallet_fact = HdWalletFactory(HdWalletCoins.BINANCE_SMART_CHAIN)
-        hd_wallet = hd_wallet_fact.CreateRandom("my_wallet_name", HdWalletWordsNum.WORDS_NUM_12)
-        hd_wallet.Generate(account_idx = 1, change_idx = HdWalletChanges.CHAIN_EXT, addr_num = 1)
-        wallet_data = hd_wallet.ToJson()
-        return Response(wallet_data)
 
 class rulev(APIView):
     authentication_classes = [SessionAuthentication, BasicAuthentication, authentication.TokenAuthentication ]
@@ -483,11 +560,11 @@ class rulev(APIView):
 
 class general(APIView):
     authentication_classes = [SessionAuthentication, BasicAuthentication, authentication.TokenAuthentication ]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self , request , format=None):
-        query = General.objects.all()
-        serializer = GeneralSerializer(query , many=True)
+        query = General.objects.get()
+        serializer = GeneralSerializer(query)
         return Response(serializer.data)
 
 class usersinfo(APIView):
@@ -496,7 +573,7 @@ class usersinfo(APIView):
 
     def get_object(self , user):
         try:
-            return UserInfo.objects.filter(user = user)
+            return UserInfo.objects.get(user = user)
         except UserInfo.DoesNotExist:
             return Http404
 
@@ -505,7 +582,7 @@ class usersinfo(APIView):
             note = Notification(user = request.user , title = 'خوش آمدید' , text = 'به AMIZAX خوش آمدید') 
             note.save()
         userinfo =  self.get_object(request.user)
-        serializer = UserInfoSerializer(userinfo , many=True)
+        serializer = UserInfoSerializer(userinfo)
         return Response(serializer.data)
     
     def post(self, request , format=None):
@@ -572,6 +649,16 @@ class dashboardinfo(APIView):
                 userinfos = UserInfo.objects.get(user = item)
                 wallet= 0
                 wallets= []
+                usbalance = 0
+                r2 = requests.get(url = 'https://api.coinex.com/v1/common/currency/rate')
+                r2 = float(r2.json()['data']['USDT_to_USD'])  + float(r2.json()['data']['USDT_to_USD']) * General.objects.get(id =1).USDTpercent2 / 100
+                r = requests.get(url = 'https://api.coinex.com/v1/market/ticker/all')
+                lists = r.json()['data']['ticker']
+                for itemm in Cp_Wallet.objects.filter(user=request.user):
+                    if itemm.currency.brand == 'USDT':
+                        usbalance = usbalance + ((1)* itemm.balance)
+                    else:
+                        usbalance = usbalance + ((float(lists[itemm.currency.brand + 'USDT']['last']))* itemm.balance)
                 price = 0
                 users=[]
                 if len(Wallet.objects.filter(user = request.user , currency = Currencies.objects.get(id = 1))) > 0:
@@ -584,7 +671,7 @@ class dashboardinfo(APIView):
                 for items in Subjects.objects.filter(user = request.user):
                     if not items.read :
                         unread = unread + 1
-                users.append({'username': item.username, 'level': userinfos.level, 'balance': wallet, 'is_active': userinfos.is_active, 'is_admin': userinfos.is_admin, 'id': item.id, 'openorder': openorder, 'unread': unread, 'openorders': openorders, 'wallets': wallets})
+                users.append({'username': item.username, 'level': userinfos.level, 'balance': wallet, 'is_active': userinfos.is_active, 'is_admin': userinfos.is_admin, 'id': item.id, 'openorder': openorder, 'unread': unread, 'openorders': openorders, 'wallets': wallets, 'usbalance': usbalance})
         return Response(users)
 
 class user(APIView):
@@ -1224,7 +1311,7 @@ class maintrades(APIView):
     def post(self , request, id , format=None):
         if len(self.get_object()) < 1 :
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        userinfo =  MainTrades.objects.filter(id = id)
+        userinfo =  MainTrades.objects.filter(brand = id)
         serializer = MainTradesSerializer(userinfo , many=True)
         return Response(serializer.data)
 
@@ -1293,11 +1380,9 @@ class fasttorial(APIView):
 class maintradebuyorders(APIView):
 
     def get_object(self , id):
-        return MainTradesBuyOrder.objects.filter(trade = MainTrades.objects.get(id = id))
+        return MainTradesBuyOrder.objects.filter(trade = MainTrades.objects.get(brand = id), status = False)
 
     def get(self, request, id, format=None):
-        if len(self.get_object(id)) < 1 :
-            return Response(status=status.HTTP_400_BAD_REQUEST)
         userinfo =  self.get_object(id)
         serializer = MainTradesBuyOrderSerializer(userinfo , many=True)
         return Response(serializer.data)
@@ -1307,80 +1392,75 @@ class maintradebuyorders(APIView):
     
     def post(self , request ,id , format=None):
         amount = float(request.data['amount'])
-        amountstart = float(request.data['amount'])
         price = float(request.data['price'])
-        trade = id
-        user = request.user
-        sells = MainTradesSellOrder.objects.filter(price__lte = request.data['price'] , trade = MainTrades.objects.get(id = id)).order_by('-price')
+        sells = MainTradesSellOrder.objects.filter(price__lte = request.data['price'] , trade = MainTrades.objects.get(brand = id) , status= False).order_by('-price')
         i=0
-        if amount * price > Wallet.objects.get(user = request.user , currency = MainTrades.objects.get(id = trade).scurrency).amount :
+        if not len(Wallet.objects.filter(user = request.user , currency = MainTrades.objects.get(brand = id).scurrency)):
+            return Response({
+            'error' : "موجودی کافی نیست"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        wal2 = Wallet.objects.get(user = request.user , currency = MainTrades.objects.get(brand = id).scurrency)
+        if amount * price > wal2.amount :
             return Response({
             'error' : "موجودی کافی نیست"
         }, status=status.HTTP_400_BAD_REQUEST)
+        wal2.amount = wal2.amount - (amount * price)
+        wal2.save()
+        add = MainTradesBuyOrder(trade = MainTrades.objects.get(brand = id) ,user = request.user, amount = amount , price = price, left = amount)
+        add.save()
         if len(sells) > 0 :
-            while i < len(sells) or amount == 0:
+            if not len(Cp_Wallet.objects.filter(user = request.user , currency = MainTrades.objects.get(brand = id).bcurrency)):
+                cc = Cp_Wallet(user = request.user , currency = MainTrades.objects.get(brand = id).bcurrency)
+                cc.save()
+            wal3 = Cp_Wallet.objects.get(user = request.user , currency = MainTrades.objects.get(brand = id).bcurrency)
+            while i < len(sells) and amount > 0:
                 item = sells[i]
-                if amount < item.amount :
-                    wal = Wallet.objects.get(user = item.user , currency = MainTrades.objects.get(id = trade).scurrency)
+                wal = Wallet.objects.get(user = item.user , currency = MainTrades.objects.get(brand = id).scurrency)
+                if amount < item.left :
                     wal.amount = wal.amount + (amount * item.price)
                     wal.save()
-                    wal2 = Wallet.objects.get(user = request.user , currency = MainTrades.objects.get(id = trade).scurrency)
-                    wal2.amount = wal.amount - (amount * item.price)
-                    wal2.save()
-                    wal3 = Wallet.objects.get(user = request.user , currency = MainTrades.objects.get(id = trade).bcurrency)
-                    wal3.amount = wal.amount + amount
+                    wal3.balance = wal3.balance + amount
                     wal3.save()
-                    amount = item.amount - amount
+                    item.left = item.left - amount
                     item.save()
+                    add.left = add.left - amount
+                    add.status = True
+                    add.save()
                     amount = 0
-
-                elif amount == item.amount :
-                    wal = Wallet.objects.get(user = item.user , currency = MainTrades.objects.get(id = trade).scurrency)
+                elif amount == item.left :
                     wal.amount = wal.amount + (amount * item.price)
                     wal.save()
-                    wal2 = Wallet.objects.get(user = request.user , currency = MainTrades.objects.get(id = trade).scurrency)
-                    wal2.amount = wal.amount - (amount * item.price)
-                    wal2.save()
-                    wal3 = Wallet.objects.get(user = request.user , currency = MainTrades.objects.get(id = trade).bcurrency)
-                    wal3.amount = wal.amount + amount
+                    wal3.balance = wal3.balance + amount
                     wal3.save()
-                    item.delete()
+                    item.left = item.left - amount
+                    item.status = True
+                    item.save()
+                    add.left = add.left - amount
+                    add.status = True
+                    add.save()
                     amount = 0
-
                 else :
-
-                    wal = Wallet.objects.get(user = item.user , currency = MainTrades.objects.get(id = trade).scurrency)
                     wal.amount = wal.amount + (amount * item.price)
                     wal.save()
-                    wal2 = Wallet.objects.get(user = request.user , currency = MainTrades.objects.get(id = trade).scurrency)
-                    wal2.amount = wal.amount - (amount * item.price)
-                    wal2.save()
-                    wal3 = Wallet.objects.get(user = request.user , currency = MainTrades.objects.get(id = trade).bcurrency)
-                    wal3.amount = wal.amount + amount
+                    wal3.balance = wal3.balance + amount
                     wal3.save()
-                    amount = amount - item.amount
-                    item.delete()
-                    i = i +1
-            if amount > 0 :
-                add = MainTradesBuyOrder(trade = MainTrades.objects.get(id = trade) ,user = request.user, amount = amount , price = price , start = amountstart)
-                add.save()
-                return Response(status=status.HTTP_201_CREATED)
-            else:
-                return Response(status=status.HTTP_201_CREATED)
-        else:
-            add = MainTradesBuyOrder(trade = MainTrades.objects.get(id = trade) ,user = request.user, amount = amount , price = price, start = amountstart)
-            add.save()
+                    add.left = add.left - item.left
+                    add.save()
+                    item.left = item.left - amount
+                    item.status = True
+                    item.save()
+                    amount = amount - item.left
+                i = i +1
             return Response(status=status.HTTP_201_CREATED)
+        return Response(status=status.HTTP_201_CREATED)
     
 
 class maintradesellorders(APIView):
 
     def get_object(self , id):
-        return MainTradesSellOrder.objects.filter(trade = MainTrades.objects.get(id = id))
+        return MainTradesSellOrder.objects.filter(trade = MainTrades.objects.get(brand = id), status = False)
 
     def get(self, request, id, format=None):
-        if len(self.get_object(id)) < 1 :
-            return Response(status=status.HTTP_400_BAD_REQUEST)
         userinfo =  self.get_object(id)
         serializer = MainTradesSellOrderSerializer(userinfo , many=True)
         return Response(serializer.data)
@@ -1392,95 +1472,94 @@ class maintradesellorders(APIView):
         amount = float(request.data['amount'])
         amountstart = float(request.data['amount'])
         price = float(request.data['price'])
-        trade = id
-        user = request.user
-        buys = MainTradesBuyOrder.objects.filter(price__gte = request.data['price'], trade = MainTrades.objects.get(id = trade)).order_by('price')
+        buys = MainTradesBuyOrder.objects.filter(price__gte = request.data['price'], trade = MainTrades.objects.get(brand = id), status= False).order_by('price')
         i=0
-        if amount > Wallet.objects.get(user = request.user , currency = MainTrades.objects.get(id = trade).bcurrency).amount :
+        if not len(Cp_Wallet.objects.filter(user = request.user , currency = MainTrades.objects.get(brand = id).bcurrency)):
             return Response({
             'error' : "موجودی کافی نیست"
-        }, status=status.HTTP_400_BAD_REQUEST)
+            }, status=status.HTTP_400_BAD_REQUEST)
+        wal3 = Cp_Wallet.objects.get(user = request.user , currency = MainTrades.objects.get(brand = id).bcurrency)
+        if amount > wal3.balance :
+            return Response({
+            'error' : "موجودی کافی نیست"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        if not(Wallet.objects.filter(user = request.user , currency = MainTrades.objects.get(brand = id).scurrency)):
+            ww = Wallet(user = request.user , currency = MainTrades.objects.get(brand = id).scurrency)
+            ww.save()
+        wal2 = Wallet.objects.get(user = request.user , currency = MainTrades.objects.get(brand = id).scurrency)
+        wal3.balance = wal3.balance - amount
+        wal3.save()
+        add = MainTradesSellOrder(trade = MainTrades.objects.get(brand = id) ,user = request.user, amount = amount , price = price, left = amount)
+        add.save()
         if len(buys) > 0 :
-            while i < len(buys) or amount == 0:
+            while (i < len(buys)) and (amount > 0):
                 item = buys[i]
-                if amount < item.amount :
-                    wal = Wallet.objects.get(user = item.user , currency = MainTrades.objects.get(id = trade).bcurrency)
-                    wal.amount = wal.amount + amount
+                wal = Cp_Wallet.objects.get(user = item.user , currency = MainTrades.objects.get(brand = id).bcurrency)
+                if amount < item.left :
+                    wal.balance = wal.balance + amount
                     wal.save()
-                    wal2 = Wallet.objects.get(user = request.user , currency = MainTrades.objects.get(id = trade).scurrency)
-                    wal2.amount = wal.amount + (amount * item.price)
+                    wal2.amount = wal2.amount + (amount * item.price)
                     wal2.save()
-                    wal3 = Wallet.objects.get(user = request.user , currency = MainTrades.objects.get(id = trade).bcurrency)
-                    wal3.amount = wal.amount - amount
-                    wal3.save()
-                    item.amount = item.amount - amount
+                    item.left = item.left - amount
                     item.save()
+                    add.left = add.left - amount
+                    add.status = True
+                    add.save()
                     amount = 0
 
-                elif amount == item.amount :
-                    wal = Wallet.objects.get(user = item.user , currency = MainTrades.objects.get(id = trade).bcurrency)
-                    wal.amount = wal.amount + amount
+                elif amount == item.left :
+                    wal = Cp_Wallet.objects.get(user = item.user , currency = MainTrades.objects.get(brand = id).bcurrency)
+                    wal.balance = wal.balance + amount
                     wal.save()
-                    wal2 = Wallet.objects.get(user = request.user , currency = MainTrades.objects.get(id = trade).scurrency)
-                    wal2.amount = wal.amount + (amount * item.price)
+                    wal2.amount = wal2.amount + (amount * item.price)
                     wal2.save()
-                    wal3 = Wallet.objects.get(user = request.user , currency = MainTrades.objects.get(id = trade).bcurrency)
-                    wal3.amount = wal.amount - amount
-                    wal3.save()
-                    item.delete()
+                    item.left = item.left - amount
+                    item.status = True
+                    item.save()
+                    add.left = add.left - amount
+                    add.status = True
+                    add.save()
                     amount = 0
                 
-                elif amount > item.amount :
+                elif amount > item.left :
 
-                    wal = Wallet.objects.get(user = item.user , currency = MainTrades.objects.get(id = trade).bcurrency)
-                    wal.amount = wal.amount + amount
+                    wal = Cp_Wallet.objects.get(user = item.user , currency = MainTrades.objects.get(brand = id).bcurrency)
+                    wal.balance = wal.balance + amount
                     wal.save()
-                    wal2 = Wallet.objects.get(user = request.user , currency = MainTrades.objects.get(id = trade).scurrency)
-                    wal2.amount = wal.amount + (amount * item.price)
+                    wal2.amount = wal2.amount + (amount * item.price)
                     wal2.save()
-                    wal3 = Wallet.objects.get(user = request.user , currency = MainTrades.objects.get(id = trade).bcurrency)
-                    wal3.amount = wal.amount - amount
-                    wal3.save()
-                    amount = amount - item.amount
-                    item.delete()
+                    add.left = add.left - item.left
+                    add.save()
+                    item.left = item.left - amount
+                    item.status = True
+                    item.save()
+                    amount = amount - item.left
                     i = i +1
-                    
-            if amount > 0 :
-                add = MainTradesSellOrder(trade = MainTrades.objects.get(id = trade) ,user = request.user, amount = amount , price = price, start = amountstart)
-                add.save()
-                return Response(status=status.HTTP_201_CREATED)
-            else:
-                return Response(status=status.HTTP_201_CREATED)
-        else:
-            add = MainTradesSellOrder(trade = MainTrades.objects.get(id = trade) ,user = request.user, amount = amount , price = price , start = amountstart)
-            add.save()
             return Response(status=status.HTTP_201_CREATED)
+        return Response(status=status.HTTP_201_CREATED)
+
 
 class maintradesinfo(APIView):
     authentication_classes = [SessionAuthentication, BasicAuthentication, authentication.TokenAuthentication ]
     permission_classes = [IsAuthenticated]
     
     def get_object(self, id):
-        return MainTrades.objects.get(id = id)
+        return MainTrades.objects.get(brand = id)
 
     def get(self , request, id, format=None):
         maintrade =  self.get_object(id)
+        sbalance = 0
+        bbalance = 0
+        minsell = 0
+        maxbuy = 0
         if len(MainTradesSellOrder.objects.filter(trade = maintrade).order_by('price')) > 0:
             minsell = MainTradesSellOrder.objects.filter(trade = maintrade).order_by('price')[0].price
-        else:
-            minsell = 0
         if len(MainTradesBuyOrder.objects.filter(trade = maintrade).order_by('-price')) > 0:
             maxbuy = MainTradesBuyOrder.objects.filter(trade = maintrade).order_by('-price')[0].price
-        else:
-            maxbuy = 0
         if(len(Wallet.objects.filter(user = request.user , currency = maintrade.scurrency))>0):
             sbalance = Wallet.objects.get(user = request.user , currency = maintrade.scurrency).amount
-        else:
-            sbalance = 0
-        if(len(Wallet.objects.filter(user = request.user , currency = maintrade.bcurrency))>0):
-            bbalance = Wallet.objects.get(user = request.user , currency = maintrade.bcurrency).amount
-        else:
-            bbalance = 0
+        if(len(Cp_Wallet.objects.filter(user = request.user , currency = maintrade.bcurrency))>0):
+            bbalance = Cp_Wallet.objects.get(user = request.user , currency = maintrade.bcurrency).balance
         serializer = {'smin': minsell, 'bmax': maxbuy, 'sbalance': sbalance, 'bbalance': bbalance}
         print(serializer)
         return Response(serializer,status=status.HTTP_201_CREATED)
@@ -1490,13 +1569,13 @@ class maintradesselllist(APIView):
     permission_classes = [IsAuthenticated]
     
     def get_object(self, user):
-        return ProTradesSellOrder.objects.filter(user = user)
+        return MainTradesSellOrder.objects.filter(user = user)
 
     def get(self , request, format=None):
         if len(self.get_object(request.user)) < 1 :
             return Response(status=status.HTTP_400_BAD_REQUEST)
         userinfo =  self.get_object(request.user)
-        serializer = ProTradesSellOrderSerializer(userinfo , many=True)
+        serializer = MainTradesSellOrderSerializer(userinfo , many=True)
         return Response(serializer.data)
 
 class maintradesbuylist(APIView):
@@ -1504,11 +1583,11 @@ class maintradesbuylist(APIView):
     permission_classes = [IsAuthenticated]
     
     def get_object(self, user):
-        return ProTradesBuyOrder.objects.filter(user = user)
+        return MainTradesBuyOrder.objects.filter(user = user)
 
     def get(self , request, format=None):
         maintrade =  self.get_object(request.user)
-        serializer = ProTradesBuyOrderSerializer(maintrade , many=True)
+        serializer = MainTradesBuyOrderSerializer(maintrade , many=True)
         return Response(serializer.data , status=status.HTTP_201_CREATED)
 
 
@@ -1884,6 +1963,10 @@ class buy(APIView):
                 return Response({'error':' موجودی کافی نیست . ابتدا حساب ریالی خود را شارژ نمایید'} )
             wallet.amount = wallet.amount - float(request.data['ramount'])
             wallet.save()
+            request.data['user'] = request.user.id
+            swal = Cp_Wallet.objects.get(user = request.user,currency = Cp_Currencies.objects.filter(brand = request.data['currency']).last())
+            swal.balance = swal.balance + float(request.data['camount'])
+            swal.save()
             serializer.save()
             sms(user = User.objects.get(id = 5) ,text= ' درخواست خرید مقدار' + str(request.data['camount']) + 'از ارز' + request.data['currency'] + 'برای ' + request.user.username, pattern= 'tfpvvl8beg')
             return Response(serializer.data , status=status.HTTP_201_CREATED)
@@ -2017,13 +2100,14 @@ class sell(APIView):
 
     def post(self , request, format=None):
         request.data['user'] = request.user.id
-        coinex = CoinEx(Perpetual.objects.get(user=request.user).apikey, Perpetual.objects.get(user=request.user).secretkey )
-        if not request.data['currency'] in coinex.balance_info():
+        if not len(Cp_Wallet.objects.filter(user = request.user, currency = Cp_Currencies.objects.filter(brand = request.data['currency']).last())):
             return Response({'error':'موجودی کافی نیست'} )
-        balance = coinex.balance_info()[request.data['currency']]['available']
+        swal = Cp_Wallet.objects.get(user = request.user, currency = Cp_Currencies.objects.filter(brand = request.data['currency']).last())
+        balance = swal.balance
         if float(balance) < float(request.data['camount']):
             return Response({'error':'موجودی کافی نیست'} )
-        coinex.sub_account_transfer(coin_type=request.data['currency'],amount=request.data['camount'])
+        swal.balance = swal.balance - float(request.data['camount'])
+        swal.save()
         wal = Wallet.objects.get(user = request.user, currency = Currencies.objects.get(id = 1))
         wal.amount = wal.amount + request.data['ramount']
         wal.save()
@@ -2052,15 +2136,23 @@ class exchange(APIView):
         request.data['user'] = request.user.id
         serializer = ExchangeSerializer(data = request.data)
         if serializer.is_valid():
-            coinex = CoinEx(Perpetual.objects.get(user=request.user).apikey, Perpetual.objects.get(user=request.user).secretkey )
-            if not request.data['currency'] in coinex.balance_info():
+            if not len(Cp_Wallet.objects.filter(currency = Cp_Currencies.objects.filter(brand = request.data['currency']).last(), user = request.user)):
                 return Response({'error':'موجودی کافی نیست'} )
-            balance = coinex.balance_info()[request.data['currency']]['available']
+            swal = Cp_Wallet.objects.get(currency = Cp_Currencies.objects.filter(brand = request.data['currency']).last(), user = request.user)
+            balance = swal.balance
             if float(balance) < float(request.data['camount']):
                 return Response({'error':'موجودی کافی نیست'} )
-            coinex.sub_account_transfer(coin_type=request.data['currency'],amount=request.data['camount'])
+            swal.balance = swal.balance - float(request.data['camount'])
+            swal.save()
             note = Notification(user=request.user, title = 'فروش موفق' , text = ' درخواست فروش شما با موفقیت انجام شد . ')
             note.save()
+            if not len(Cp_Wallet.objects.filter(currency = Cp_Currencies.objects.filter(brand = request.data['currency2']).last(), user = request.user)):
+                bwal = Cp_Wallet(currency = Cp_Currencies.objects.filter(brand = request.data['currency2']).last(), user = request.user, balance = float(request.data['camount2']))
+                bwal.save()
+            else:
+                bwal = Cp_Wallet.objects.get(currency = Cp_Currencies.objects.filter(brand = request.data['currency2']).last(), user = request.user)
+                bwal.balance = bwal.balance + float(request.data['camount2'])
+                bwal.save()
             serializer.save()
             try:
                 sms(user = User.objects.get(id = 5) ,text= ' درخواست تبدیل مقدار' + str(request.data['camount']) + 'از ارز' + request.data['currency'] + 'برای ' + request.user.username, pattern= 'tfpvvl8beg')
@@ -2083,38 +2175,44 @@ class oltradeinfo(APIView):
         list = r.json()['data']['ticker']
         list2 = {}
         for item in Leverage.objects.all():
-            list2[item.symbol] = list[item.symbol]
+            if item.symbol in list:
+                list2[item.symbol] = list[item.symbol]
         return Response(list2)
 
 class oltradeinfo3(APIView):
 
 
     def get(self , request, format=None):   
-        r2 = requests.get(url = 'https://api.coinex.com/v1/common/currency/rate')
-        r2 = float(r2.json()['data']['USDT_to_USD']) * General.objects.get(id =1).USDTpercent2 / 100
-        list = {} 
+        price = Price.objects.get()
+        rial = price.usd + (price.usd * (General.objects.get(id = 1).USDTpercent / 100))
+        list = {}
         r = requests.get(url = 'https://api.coinex.com/v1/market/ticker/all')
         list = r.json()['data']['ticker']
-        for itemm in list.keys():
-            if itemm in list:
-                list[itemm]['last'] = float(list[itemm]['last']) / r2 
         list2 = {}
         for item in Leverage.objects.all():
-            if 'USDT' in item.symbol:
+            if item.symbol == 'BTCUSDT':
+                list2[item.symbol] = list[item.symbol]
+                pprice = float(list[item.symbol]['last'])
+                list2[item.symbol]['last'] = pprice 
+                list2[item.symbol]['change'] = (float(list[item.symbol]['last']) - float(list[item.symbol]['open'])) / float(list[item.symbol]['open']) * 100
+                list2[item.symbol]['rial'] = pprice * (price.usd + (price.usd * (General.objects.get(id = 1).USDTpercent3 / 100)))
+            elif 'USDT' in item.symbol:
                 if item.symbol in list:
                     list2[item.symbol] = list[item.symbol]
+                    pprice = float(list[item.symbol]['last'])
+                    list2[item.symbol]['last'] = pprice 
+                    list2[item.symbol]['change'] = (float(list[item.symbol]['last']) - float(list[item.symbol]['open'])) / float(list[item.symbol]['open']) * 100
+                    list2[item.symbol]['rial'] = pprice * rial
         return Response(list2)
 
+class oltradeinfo4(APIView):
 
-class oltradeinfo2(APIView):
-    authentication_classes = [SessionAuthentication, BasicAuthentication, authentication.TokenAuthentication ]
-    permission_classes = [IsAuthenticated]
-    def post(self , request, format=None):   
-        cmc = CoinMarketCapAPI('922daa52-37ae-43df-a102-89f97ffb7d51')
-  
-        r = cmc.cryptocurrency_quotes_latest(symbol = request.data['symbol'])
 
-        return Response(r.data)
+    def get(self , request, format=None):   
+        query = Leverage.objects.all().order_by('-last')
+        serializer = Oltrade4Serializer(query, many=True)
+        return Response(serializer.data)
+
 
 class olboardinfo(APIView):
     authentication_classes = [SessionAuthentication, BasicAuthentication, authentication.TokenAuthentication ]
@@ -2129,6 +2227,7 @@ class cp_balance(APIView):
     def post(self , request, format=None):   
         coinex = CoinEx(Perpetual.objects.get(user=request.user).apikey, Perpetual.objects.get(user=request.user).secretkey )
         return Response(coinex.margin_account(market =  request.data['sym']))
+    
 
 class cp_borrow(APIView):
     authentication_classes = [SessionAuthentication, BasicAuthentication, authentication.TokenAuthentication ]
@@ -2162,25 +2261,29 @@ class cp_borrowlist(APIView):
 
 class cp_ticker(APIView):
     def post(self , request, format=None):
+        price = Price.objects.get()
+        rial = price.usd + (price.usd * (General.objects.get(id = 1).USDTpercent / 100))
+        if request.data['sym'] == 'BTC':
+            rial = price.usd + (price.usd * (General.objects.get(id = 1).USDTpercent3 / 100))
         if request.data['sym'] == 'USDT':
             r = requests.get(url = 'https://api.coinex.com/v1/common/currency/rate')
             r = r.json()['data']['USDT_to_USD']
             print(r)
-            return Response({'buy' : float(r) * General.objects.get(id =1).USDTpercent2 / 100, 'last' : float(r) * General.objects.get(id =1).USDTpercent2 / 100})
+            price = float(r) + (float(r) * General.objects.get(id =1).USDTpercent2 / 100)
+            return Response({'buy' : price, 'last' : price, 'rial': price * rial})
         r2 = requests.get(url = 'https://api.coinex.com/v1/common/currency/rate')
-        r2 = float(r2.json()['data']['USDT_to_USD']) * General.objects.get(id =1).USDTpercent2 / 100
+        r2 = r2.json()['data']['USDT_to_USD']
+        r2 = (float(r2) + (float(r2) * General.objects.get(id =1).USDTpercent2 / 100))
         list = {} 
         r = requests.get(url = 'https://api.coinex.com/v1/market/ticker/all')
         list = r.json()['data']['ticker']
-        list[request.data['sym']+'USDT']['last'] = float(list[request.data['sym']+'USDT']['last']) / r2 
-        return Response(list[request.data['sym']+'USDT'])
+        price = float(list[request.data['sym']+'USDT']['last']) 
+        list = {}
+        list['last'] = price
+        list['buy'] = price
+        list['rial'] = price * rial
+        return Response(list)
         
-        r = requests.get(url = 'https://api.coinex.com/v1/common/currency/rate')
-        r = float(r.json()['data']['USDT_to_USD'])
-        coinex = CoinEx('56255CA42286443EB7D3F6DB44633C25', '30C28552C5B3337B5FC0CA16F2C50C4988D47EA67D03C5B7')
-        n = coinex.market_ticker(market =  request.data['sym']+'USDT')
-        n['ticker']['last'] = float(n['ticker']['last']) / r
-        return Response(n)
 
 class cp_address(APIView):
     def post(self , request, format=None):
@@ -2312,11 +2415,12 @@ class cp_mg_main(APIView):
         return Response(coinex.balance_info())
 
     def post(self , request):
-        coinex = CoinEx(Perpetual.objects.get(user=request.user).apikey, Perpetual.objects.get(user=request.user).secretkey )
-        bal = coinex.balance_info()
-        if request.data['sym'] in bal:
-            return Response(bal[request.data['sym']]['available'])
-        return Response(0)
+        wal = Cp_Wallet.objects.filter(user= request.user, currency = Cp_Currencies.objects.filter(brand = request.data['sym']).last())
+        if(len(wal)):
+            wal = wal.last().balance
+        else:
+            wal = 0
+        return Response(wal)
 
 class cp_mg_settings(APIView):
     authentication_classes = [SessionAuthentication, BasicAuthentication, authentication.TokenAuthentication ]
@@ -2383,8 +2487,6 @@ class cp_wallets(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self , request , format=None):
-        coinex = CoinEx(Perpetual.objects.get(user=request.user).apikey, Perpetual.objects.get(user=request.user).secretkey )
-        res = coinex.balance_info()
         result = {}
         for item in Cp_Currencies.objects.all():
             if len(Cp_Wallet.objects.filter(currency = item , user= request.user)):
@@ -2393,11 +2495,31 @@ class cp_wallets(APIView):
             else: 
                 result[item.brand] = {'name' : item.name ,  'brand' : item.brand,'chain' : item.chain,'can_deposit' : item.can_deposit,'can_withdraw' : item.can_withdraw,'deposit_least_amount' : item.deposit_least_amount,'withdraw_least_amount' : item.withdraw_least_amount,'withdraw_tx_fee' : item.withdraw_tx_fee,'balance':'0'}
         return Response(result)
+
     def post(self , request , format=None):
         coinex = CoinEx(Perpetual.objects.get(user=request.user).apikey, Perpetual.objects.get(user=request.user).secretkey )
         res = coinex.balance_info()
         return Response(res)
 
+class cp_wallets2(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, authentication.TokenAuthentication ]
+    permission_classes = [IsAuthenticated]
+
+    def get(self , request , format=None):
+        result = {}
+        for item in Cp_Currencies.objects.all():
+            if item.brand != 'USDT':
+                if len(Cp_Wallet.objects.filter(currency = item , user= request.user)):
+                    wal = Cp_Wallet.objects.get(currency = item , user= request.user)
+                    result[item.brand] = {'name' : item.name ,  'brand' : item.brand,'chain' : item.chain,'can_deposit' : item.can_deposit,'can_withdraw' : item.can_withdraw,'deposit_least_amount' : item.deposit_least_amount,'withdraw_least_amount' : item.withdraw_least_amount,'withdraw_tx_fee' : item.withdraw_tx_fee,'balance':wal.balance}
+                else: 
+                    result[item.brand] = {'name' : item.name ,  'brand' : item.brand,'chain' : item.chain,'can_deposit' : item.can_deposit,'can_withdraw' : item.can_withdraw,'deposit_least_amount' : item.deposit_least_amount,'withdraw_least_amount' : item.withdraw_least_amount,'withdraw_tx_fee' : item.withdraw_tx_fee,'balance':'0'}
+        return Response(result)
+
+    def post(self , request , format=None):
+        coinex = CoinEx(Perpetual.objects.get(user=request.user).apikey, Perpetual.objects.get(user=request.user).secretkey )
+        res = coinex.balance_info()
+        return Response(res)
 
 
 class cp_wallet(APIView):
@@ -2415,12 +2537,12 @@ class cp_wallet(APIView):
         brand = item.brand
         curs = Cp_Currencies.objects.filter(brand = brand)
         for item in curs:
-        result = {}
-        if len(Cp_Wallet.objects.filter(currency = item , user= request.user)):
-            wal = Cp_Wallet.objects.get(currency = item , user= request.user)
-            result[item.brand] = {'name' : item.name ,  'brand' : item.brand,'chain' : item.chain,'can_deposit' : item.can_deposit,'can_withdraw' : item.can_withdraw,'deposit_least_amount' : item.deposit_least_amount,'withdraw_least_amount' : item.withdraw_least_amount,'withdraw_tx_fee' : item.withdraw_tx_fee,'balance':wal.balance}
-        else: 
-            result[item.brand] = {'name' : item.name ,  'brand' : item.brand,'chain' : item.chain,'can_deposit' : item.can_deposit,'can_withdraw' : item.can_withdraw,'deposit_least_amount' : item.deposit_least_amount,'withdraw_least_amount' : item.withdraw_least_amount,'withdraw_tx_fee' : item.withdraw_tx_fee,'balance':'0'}
+            result = {}
+            if len(Cp_Wallet.objects.filter(currency = item , user= request.user)):
+                wal = Cp_Wallet.objects.get(currency = item , user= request.user)
+                result[item.brand] = {'name' : item.name ,  'brand' : item.brand,'chain' : item.chain,'can_deposit' : item.can_deposit,'can_withdraw' : item.can_withdraw,'deposit_least_amount' : item.deposit_least_amount,'withdraw_least_amount' : item.withdraw_least_amount,'withdraw_tx_fee' : item.withdraw_tx_fee,'balance':wal.balance}
+            else: 
+                result[item.brand] = {'name' : item.name ,  'brand' : item.brand,'chain' : item.chain,'can_deposit' : item.can_deposit,'can_withdraw' : item.can_withdraw,'deposit_least_amount' : item.deposit_least_amount,'withdraw_least_amount' : item.withdraw_least_amount,'withdraw_tx_fee' : item.withdraw_tx_fee,'balance':'0'}
         return Response(result)
 
     def post(self , request, id, format=None):   
@@ -2627,7 +2749,7 @@ class bottomsticker(APIView):
         return Response(serializer.data)
 
 class posts(APIView):
-    def get():
+    def get(self , request , format=None):
         query = Posts.objects.all()
         serializer = PostsSerializer(query , many =True)
         return Response(serializer.data)
@@ -2643,8 +2765,8 @@ class news(APIView):
 
 class topsticker(APIView):
     def get(self , request , format=None):
-        pages = Pages.objects.filter(position = 'top')
-        serializer = PagesSerializer(pages , many=True)
+        pages = TopSticker.objects.all()
+        serializer = TopStickerSerializer(pages , many=True)
         return Response(serializer.data)
 
     def post(self , request , format=None):
@@ -2663,8 +2785,8 @@ class topsticker(APIView):
 
 class bottomsticker(APIView):
     def get(self , request , format=None):
-        pages = Pages.objects.filter(position = 'bottom')
-        serializer = PagesSerializer(pages , many=True)
+        pages = BottomSticker.objects.all().order_by('id')
+        serializer = BottomStickerSerializer(pages , many=True)
         return Response(serializer.data)
         
     def post(self , request , format=None):
@@ -2685,8 +2807,8 @@ class bottomsticker(APIView):
 
 class mainpageposts(APIView):
     def get(self , request , format=None):
-        pages = Pages.objects.filter(position = 'mainposts')
-        serializer = PagesSerializer(pages , many=True)
+        query = Posts.objects.all().order_by('-id')[:3]
+        serializer = PostsSerializer(query , many =True)
         return Response(serializer.data)
         
     def post(self , request , format=None):
@@ -2761,4 +2883,288 @@ class levelfee(APIView):
     def get(self, request, *args, **kwargs):
         user = LevelFee.objects.filter(id = UserInfo.objects.get(user = request.user).level)
         serializer = LevelFeeSerializer(user , many=True)
+        return Response(serializer.data)
+        
+class generalbtc(APIView):
+    
+    def get(self, request, *args, **kwargs):
+        return Response(General.objects.get().USDTpercent3)
+    
+class sellpercent(APIView):
+    
+    def get(self, request, *args, **kwargs):
+        return Response(General.objects.get().sellpercent)
+
+
+class alert(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, authentication.TokenAuthentication ]
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, *args, **kwargs):
+        query = Alert.objects.filter(page = request.data['page'])
+        if not len(query):
+            return Response ('')
+        serializer = AlertSerializer(query.last())
+        return Response(serializer.data)
+
+
+class p2prequests(GenericAPIView, mixins.DestroyModelMixin, mixins.UpdateModelMixin, mixins.CreateModelMixin, mixins.ListModelMixin):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, authentication.TokenAuthentication ]
+    permission_classes = [IsAuthenticated]
+
+    queryset = P2pRequest.objects.filter(status__lt = 10)
+    serializer_class = P2pRequestSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    def get(self , request , format=None):
+        return self.list(request)
+
+    def post(self , request , format=None):
+        return self.create(request , user = request.user)
+
+    def put(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+    
+    def delete(self , request, pk):
+        a = P2pRequest.objects.get(rid = pk)
+        a.status = 10
+        a.save()
+        return self.list(request)
+    
+
+class p2pmyorders(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, authentication.TokenAuthentication ]
+    permission_classes = [IsAuthenticated]
+
+
+    def get(self , request , format=None):
+        query = P2pRequest.objects.filter(user = request.user, status__lt = 10)
+        serializer = P2pRequestSerializer(query , many=True)
+        return Response(serializer.data)
+
+    def post(self , request, id, format=None):
+        query = P2pRequest.objects.get(rid=id)
+        serializer = P2pRequestSerializer(query)
+        return Response(serializer.data)
+
+class p2pmybuyorders(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, authentication.TokenAuthentication ]
+    permission_classes = [IsAuthenticated]
+
+
+    def get(self , request , format=None):
+        query = P2pBuyRequest.objects.filter(Q(user = request.user) | Q(user2 = request.user) , status__lt = 9)
+        serializer = P2pBuyRequestSerializer(query , many=True)
+        return Response(serializer.data)
+
+
+
+
+class p2pbuy(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, authentication.TokenAuthentication ]
+    permission_classes = [IsAuthenticated]
+
+    def get(self , request, id):
+        req = P2pBuyRequest.objects.get(rid = id)
+        serializer = P2pBuyRequestSerializer(req)
+        return Response(serializer.data)
+
+    def post(self , request, id):
+        req = P2pBuyRequest.objects.create(user = request.user, amount = float(request.data['amount']), request = P2pRequest.objects.get(rid = id), user2 = P2pRequest.objects.get(rid = id).user)
+        return Response(req.rid)
+
+    def put(self , request, id):
+        req = P2pBuyRequest.objects.get(rid = id)
+        req.wallet = request.data['wallet']
+        req.memo = request.data['memo']
+        req.details = request.data['details']
+        req.save()
+        serializer = P2pBuyRequestSerializer(req)
+        return Response(serializer.data)
+
+    def delete(self , request, id):
+        req = P2pBuyRequest.objects.get(rid = id)
+        req.status = 10
+        req.save()
+        serializer = P2pBuyRequestSerializer(req)
+        return Response(serializer.data)
+
+
+class p2pbuyaccept(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, authentication.TokenAuthentication ]
+    permission_classes = [IsAuthenticated]
+
+    def post(self , request, id):
+        req = P2pBuyRequest.objects.get(rid = id)
+        req.status = 1
+        req.save()
+        serializer = P2pBuyRequestSerializer(req)
+        return Response(serializer.data)
+
+class p2psent(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, authentication.TokenAuthentication ]
+    permission_classes = [IsAuthenticated]
+
+    def post(self , request, id):
+        req = P2pBuyRequest.objects.get(rid = id)
+        req.status = 3
+        req.save()
+        serializer = P2pBuyRequestSerializer(req)
+        return Response(serializer.data)
+
+
+
+class p2pacceptget(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, authentication.TokenAuthentication ]
+    permission_classes = [IsAuthenticated]
+
+    def post(self , request, id):
+        req = P2pBuyRequest.objects.get(rid = id)
+        req.status = 4
+        req.save()
+        user = req.user2
+        wal =Wallet.objects.filter(user=user , currency = Currencies.objects.get())
+        if not req.request.done:
+            req.request.done = req.amount
+            req.request.save()
+        else:
+            req.request.done = float(req.request.done) + req.amount
+            req.request.save()
+        if req.request.done == req.request.balance:
+            req.request.status = 2
+        if len(wal):
+            wal= wal.last()
+            wal.amount = wal.amount + (req.request.price * req.amount)
+            wal.save()
+        else:
+            wal = Wallet.objects.create(user=user , currency = Currencies.objects.get())
+            wal.amount = wal.amount + (req.request.price * req.amount)
+            wal.save()
+
+        serializer = P2pBuyRequestSerializer(req)
+        return Response(serializer.data)
+
+
+P2PCallbackURL = 'https://amizax.com/api/v1/p2pverifys/'
+
+
+class p2pbuypay(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, authentication.TokenAuthentication ]
+    permission_classes = [IsAuthenticated]
+
+    def to_bank(self, rid , req, request):
+        
+        amount = int((req.request.price * req.amount))/10
+        uid = str(rid)
+        
+        payload='api_key=5a273bf9-c01e-48bd-abd2-816563ad61cc&amount=' +str(amount)+ '&order_id=&customer_phone=&callback_uri=' + P2PCallbackURL 
+        headers = {
+        'User-Agent': 'PostmanRuntime/7.26.8',
+        'Content-Type': 'application/x-www-form-urlencoded'
+        }
+        trans = requests.request("POST", NP_API_REQUEST, headers=headers, data=payload).json()
+        tr = Transactionid(user = request.user , transid = uid , amount = (req.request.price * req.amount), tid = trans['trans_id'])
+        tr.save()
+        return Response(f"{trans}")
+
+
+    def post(self , request, id):
+        if not SmsCode.objects.filter(user = request.user, number = request.data['code'], date__gt = datetime.now() - timedelta(minutes=20)):
+            return Response(status=status.HTTP_403_FORBIDDEN)
+        req = P2pBuyRequest.objects.get(rid = id)
+        if len(Wallet.objects.filter(user=request.user, currency = Currencies.objects.get())):
+            wal = Wallet.objects.get(user=request.user, currency = Currencies.objects.get())
+            if wal.amount >= (req.request.price * req.amount):
+                wal.amount = wal.amount - (req.request.price * req.amount)
+                wal.save()
+                req.status = 2
+                req.save()
+                serializer = P2pBuyRequestSerializer(req)
+                return Response(serializer.data)
+            else:
+                return self.to_bank(id, req, request)
+        else:
+            return self.to_bank(id, req, request)
+        
+
+def p2pverifys(request):
+    tid = request.GET.get('trans_id', '')
+    transactioni = Transactionid.objects.get(tid = tid)
+    req = P2pBuyRequest.objects.get(rid = transactioni.transid)
+    amount = request.GET.get('amount', '')
+    payload='api_key=5a273bf9-c01e-48bd-abd2-816563ad61cc&amount='+str(amount)+ f'&trans_id={tid}'
+    headers = {
+    'User-Agent': 'PostmanRuntime/7.26.8',
+    'Content-Type': 'application/x-www-form-urlencoded'
+    }
+
+    response = requests.request("POST", NP_API_VERIFY, headers=headers, data=payload).json()
+    if int(response['code']) == 0:
+        if amount == (req.request.price * req.amount):
+            req.status = 2
+            req.save()
+            return redirect(f'https://amizax.com/p2psuccess/{req.rid}')
+        else:
+            wal = Wallet.objects.get(user=request.user, currency = Currencies.objects.get())
+            if wal.amount >= ((req.request.price * req.amount) - amount):
+                wal.amount = wal.amount - ((req.request.price * req.amount) - amount)
+                wal.save()
+                req.status = 2
+                req.save()
+                return redirect(f'https://amizax.com/p2psuccess/{req.rid}')
+    else:
+        return render(request, 'failure.html', {'message': 'خطایی رخ داده است'})
+
+
+
+class chains(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, authentication.TokenAuthentication ]
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, *args, **kwargs):
+        user = Cp_Currencies.objects.filter(brand = request.data['brand'])
+        serializer = ChainSerializer(user , many=True)
+        return Response(serializer.data)
+
+
+class MyChatRooms(GenericAPIView, mixins.DestroyModelMixin, mixins.UpdateModelMixin, mixins.CreateModelMixin, mixins.ListModelMixin):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, authentication.TokenAuthentication ]
+    permission_classes = [IsAuthenticated]
+
+    def get(self , request , format=None):
+        queryset = ChatRoom.objects.filter(Q(user1=request.user) | Q(user2=request.user))
+        serializer = ChatRoomSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class ChatTexts(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, authentication.TokenAuthentication ]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id):
+        if User.objects.get(username=id) == request.user:
+            return Response(False)
+        queryset = ChatText.objects.filter(room = ChatRoom.objects.get(Q(user1=request.user , user2=User.objects.get(username=id)) | Q(user2=request.user, user1=User.objects.get(username=id)))).order_by('id')
+        serializer = ChatTextSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def post(self , request, id):
+        if User.objects.get(username=id) == request.user:
+            return Response([])
+        if len(ChatRoom.objects.filter(user1 = request.user, user2 = User.objects.get(username= id))):
+            chatroom = ChatRoom.objects.get(user1 = request.user, user2 = User.objects.get(username= id))
+            textchat = ChatText.objects.create(user = request.user, room = chatroom, text = request.data['text'])
+            textchat.save()
+        elif len(ChatRoom.objects.filter(user2 = request.user, user1 = User.objects.get(username= id))):
+            chatroom = ChatRoom.objects.get(user2 = request.user, user1 = User.objects.get(username= id))
+            textchat = ChatText.objects.create(user = request.user, room = chatroom, text = request.data['text'])
+            textchat.save()
+        else:
+            chatroom = ChatRoom.create(user1 = request.user, user2 = User.objects.get(username= id))
+            textchat = ChatText.objects.create(user = request.user, room = chatroom, text = request.data['text'])
+            textchat.save()
+        query = ChatText.objects.filter(room = chatroom)
+        serializer = ChatTextSerializer(query, many = True)
         return Response(serializer.data)
