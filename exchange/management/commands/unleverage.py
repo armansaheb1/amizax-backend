@@ -9,4 +9,5 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         Lev = Leverage.objects.all()
         for item in Lev:
-            if not 'USDT' in item.
+            if not 'USDT' in item.symbol:
+                item.delete()

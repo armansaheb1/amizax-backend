@@ -2264,7 +2264,7 @@ class cp_ticker(APIView):
         price = Price.objects.get()
         rial = price.usd + (price.usd * (General.objects.get(id = 1).USDTpercent / 100))
         if request.data['sym'] == 'BTC':
-            rial = price.usd + (price.usd * (General.objects.get(id = 1).USDTpercent3 / 100))
+            rial = float(price.usd) + float(float(price.usd) * (float(General.objects.get(id = 1).USDTpercent3) / 100))
         if request.data['sym'] == 'USDT':
             r = requests.get(url = 'https://api.coinex.com/v1/common/currency/rate')
             r = r.json()['data']['USDT_to_USD']
@@ -2410,6 +2410,7 @@ class cp_mg_usdt(APIView):
 class cp_mg_main(APIView):
     authentication_classes = [SessionAuthentication, BasicAuthentication, authentication.TokenAuthentication ]
     permission_classes = [IsAuthenticated]
+    
     def get(self , request):
         coinex = CoinEx(Perpetual.objects.get(user=request.user).apikey, Perpetual.objects.get(user=request.user).secretkey )
         return Response(coinex.balance_info())
@@ -3004,6 +3005,7 @@ class p2pbuyaccept(APIView):
         return Response(serializer.data)
 
 class p2psent(APIView):
+    
     authentication_classes = [SessionAuthentication, BasicAuthentication, authentication.TokenAuthentication ]
     permission_classes = [IsAuthenticated]
 

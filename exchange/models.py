@@ -1431,8 +1431,8 @@ class P2pRequest(models.Model):
     maximum_time = models.IntegerField()
     change_world = models.BooleanField(default=False)
     limit_world = models.BooleanField(default=False)
-    limit_max = models.FloatField(null=True)
-    limit_min = models.FloatField(null=True)
+    limit_max = models.FloatField(null=True,blank = True, default= 0)
+    limit_min = models.FloatField(null=True,blank = True, default= 0)
     done = models.FloatField(null=True)
     status = models.IntegerField(default= 0)
 
