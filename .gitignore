@@ -7,3 +7,4 @@ debug.log
 /chat/__pycache__/
 /sarafi/__pycache__/
 __pycache__/
+/.venv
