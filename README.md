@@ -1,0 +1,10 @@
+django
+python
+drf
+cryptocurrency
+exchange
+fintech
+backend
+api
+postgresql
+jwt
